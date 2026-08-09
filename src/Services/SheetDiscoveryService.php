@@ -2,15 +2,25 @@
 
 namespace Akbarjimi\ExcelImporter\Services;
 
+use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-readonly class SheetDiscoveryService
+final readonly class SheetDiscoveryService
 {
     public function discover(ExcelFile $file): array
     {
-        $reader = IOFactory::createReaderForFile($file->resolvedPath());
+        $absolutePath = Storage::disk($file->disk)->path($file->path);
 
-        return $reader->listWorksheetInfo($file->resolvedPath());
+        $reader = IOFactory::createReaderForFile($absolutePath);
+
+        $worksheetsInfo = $reader->listWorksheetInfo($absolutePath);
+
+        return array_values(array_map(
+            static fn(array $info, int $index): SheetInfo => SheetInfo::fromPhpSpreadsheet($info, $index),
+            $worksheetsInfo,
+            array_keys($worksheetsInfo),
+        ));
     }
 }
