@@ -13,18 +13,18 @@ readonly class ImportManager
     {
         $driver ??= config('excel-importer.default_disk');
 
-        return DB::transaction(function () use ($relativePath, $driver) {
+        $file = DB::transaction(function () use ($relativePath, $driver) {
 
-            $file = ExcelFile::create([
+            return ExcelFile::create([
                 'file_name' => basename($relativePath),
                 'path' => $relativePath,
                 'driver' => $driver,
                 'status' => ExcelFileStatus::PENDING,
             ]);
-
-            event(new ExcelUploaded($file));
-
-            return $file;
         });
+
+        event(new ExcelUploaded($file->id));
+
+        return $file;
     }
 }
