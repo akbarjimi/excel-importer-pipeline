@@ -4,22 +4,32 @@ namespace Akbarjimi\ExcelImporter\Listeners;
 
 use Akbarjimi\ExcelImporter\Events\ExcelUploaded;
 use Akbarjimi\ExcelImporter\Events\SheetsDiscovered;
+use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelSheetRepository;
 use Akbarjimi\ExcelImporter\Services\SheetDiscoveryService;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
+use Illuminate\Queue\InteractsWithQueue;
 
-final readonly class HandleExcelUploaded
+final class HandleExcelUploaded implements ShouldQueueAfterCommit
 {
+    use InteractsWithQueue;
+
     public function __construct(
-        private SheetDiscoveryService $discovery,
-        private ExcelSheetRepository $sheetRepo,
-    ) {}
+        private readonly SheetDiscoveryService $discovery,
+        private readonly ExcelFileRepository   $fileRepo,
+        private readonly ExcelSheetRepository  $sheetRepo,
+    )
+    {
+    }
 
     public function handle(ExcelUploaded $event): void
     {
-        $sheetDTOs = $this->discovery->discover($event->file);
+        $file = $this->fileRepo->findOrFail($event->fileId);
 
-        $this->sheetRepo->bulkCreate($event->file->id, $sheetDTOs);
+        $sheets = $this->discovery->discover($file);
 
-        event(new SheetsDiscovered($event->file->id));
+        $this->sheetRepo->bulkCreate($file->id, $sheets);
+
+        event(new SheetsDiscovered($file->id));
     }
 }
