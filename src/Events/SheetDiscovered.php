@@ -2,11 +2,13 @@
 
 namespace Akbarjimi\ExcelImporter\Events;
 
-use Akbarjimi\ExcelImporter\Models\ExcelSheet;
+use Illuminate\Foundation\Events\Dispatchable;
 
-readonly class SheetDiscovered
+final readonly class SheetDiscovered
 {
-    public function __construct(
-        public ExcelSheet $sheet,
-    ) {}
+    use Dispatchable;
+
+    public function __construct(public int $sheetId)
+    {
+    }
 }
