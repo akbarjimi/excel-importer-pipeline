@@ -2,9 +2,13 @@
 
 namespace Akbarjimi\ExcelImporter\Events;
 
-readonly class SheetsDiscovered
+use Illuminate\Foundation\Events\Dispatchable;
+
+final readonly class SheetsDiscovered
 {
-    public function __construct(
-        public int $fileId,
-    ) {}
+    use Dispatchable;
+
+    public function __construct(public int $fileId)
+    {
+    }
 }
