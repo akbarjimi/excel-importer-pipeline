@@ -8,29 +8,17 @@ use Illuminate\Support\Facades\Validator;
 
 final class ValidateService
 {
-    private array $rules = [];
-
-    /**
-     * Load validation rules for a specific sheet
-     */
-    public function load(ExcelSheet $sheet): void
+    public function apply(array $payload, ExcelSheet $sheet): array
     {
         $rules = Config::get('excel-importer-sheets.'.$sheet->name.'.validation', []);
-        $this->rules = $rules;
-    }
-
-    /**
-     * Validate a row and return validation errors, if any
-     */
-    public function apply(array $payload): array
-    {
-        // TODO: what happen if rules do not load and this line said
-        // row contents are ok?
-        if (empty($this->rules)) {
+        if (empty($rules)) {
+            if (Config::get('excel-importer.strict_validation', false)) {
+                throw new \RuntimeException("No validation rules loaded for this sheet.");
+            }
             return [];
         }
 
-        $validator = Validator::make($payload, $this->rules);
+        $validator = Validator::make($payload, $rules);
 
         return $validator->fails() ? $validator->errors()->toArray() : [];
     }
