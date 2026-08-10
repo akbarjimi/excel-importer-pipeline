@@ -3,7 +3,7 @@
 namespace Akbarjimi\ExcelImporter\Services;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
-use Akbarjimi\ExcelImporter\Events\ExcelUploaded;
+use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +23,7 @@ readonly class ImportManager
             ]);
         });
 
-        event(new ExcelUploaded($file->id));
+        event(new ExcelFileRegistered($file->id));
 
         return $file;
     }

@@ -2,14 +2,14 @@
 
 namespace Akbarjimi\ExcelImporter;
 
-use Akbarjimi\ExcelImporter\Events\AllSheetsDispatched;
-use Akbarjimi\ExcelImporter\Events\ExcelUploaded;
-use Akbarjimi\ExcelImporter\Events\SheetDiscovered;
-use Akbarjimi\ExcelImporter\Events\SheetsDiscovered;
-use Akbarjimi\ExcelImporter\Listeners\HandleAllSheetsDispatched;
-use Akbarjimi\ExcelImporter\Listeners\HandleExcelUploaded;
-use Akbarjimi\ExcelImporter\Listeners\HandleSheetDiscovered;
-use Akbarjimi\ExcelImporter\Listeners\HandleSheetsDiscovered;
+use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
+use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
+use Akbarjimi\ExcelImporter\Events\SheetReadyForExtraction;
+use Akbarjimi\ExcelImporter\Events\FileSheetsScanCompleted;
+use Akbarjimi\ExcelImporter\Listeners\HandleAllRowsExtracted;
+use Akbarjimi\ExcelImporter\Listeners\HandleExcelFileRegistered;
+use Akbarjimi\ExcelImporter\Listeners\HandleSheetReadyForExtraction;
+use Akbarjimi\ExcelImporter\Listeners\HandleFileSheetsScanCompleted;
 use Akbarjimi\ExcelImporter\Services\RowExtractionService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -38,9 +38,9 @@ class ExcelImporterServiceProvider extends ServiceProvider
 
     public function registerEventListeners(): void
     {
-        Event::listen(ExcelUploaded::class, HandleExcelUploaded::class);
-        Event::listen(SheetsDiscovered::class, HandleSheetsDiscovered::class);
-        Event::listen(SheetDiscovered::class, HandleSheetDiscovered::class);
-        Event::listen(AllSheetsDispatched::class, HandleAllSheetsDispatched::class);
+        Event::listen(ExcelFileRegistered::class, HandleExcelFileRegistered::class);
+        Event::listen(FileSheetsScanCompleted::class, HandleFileSheetsScanCompleted::class);
+        Event::listen(SheetReadyForExtraction::class, HandleSheetReadyForExtraction::class);
+        Event::listen(AllRowsExtracted::class, HandleAllRowsExtracted::class);
     }
 }
