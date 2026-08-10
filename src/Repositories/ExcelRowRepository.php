@@ -12,6 +12,11 @@ final class ExcelRowRepository
             ->chunk($chunkSize)
             ->each(function ($chunk) {
                 $sanitized = collect($chunk)->map(function ($row) {
+                    // If id were included, the DB would try to match or insert the
+                    // id column explicitly, potentially causing conflicts with
+                    // auto-increment behaviour. Removing it lets the DB
+                    // assign IDs on insert and match on the composite
+                    // unique key on update
                     unset($row['id']);
                     return $row;
                 })->all();
