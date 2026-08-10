@@ -2,8 +2,7 @@
 
 namespace Akbarjimi\ExcelImporter\Listeners;
 
-use Akbarjimi\ExcelImporter\Events\AllChunksCompleted;
-use Akbarjimi\ExcelImporter\Jobs\MapChunkJob;
+use Akbarjimi\ExcelImporter\Events\SheetProcessingCompleted;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
@@ -14,7 +13,7 @@ final class HandleAllChunksCompleted
     {
     }
 
-    public function handle(AllChunksCompleted $event): void
+    public function handle(SheetProcessingCompleted $event): void
     {
         $sheet = ExcelSheet::with('excelRowChunks')->findOrFail($event->sheetId);
 

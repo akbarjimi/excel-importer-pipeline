@@ -3,7 +3,7 @@
 namespace Akbarjimi\ExcelImporter\Listeners;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
-use Akbarjimi\ExcelImporter\Events\AllSheetsDispatched;
+use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
 use Akbarjimi\ExcelImporter\Jobs\ProcessChunkJob;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Services\ChunkerService;
@@ -12,7 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Log;
 
-final class HandleAllSheetsDispatched implements ShouldQueue
+final class HandleAllRowsExtracted implements ShouldQueue
 {
     use InteractsWithQueue;
 
@@ -22,7 +22,7 @@ final class HandleAllSheetsDispatched implements ShouldQueue
 
     public function __construct(private readonly ChunkerService $chunker) {}
 
-    public function handle(AllSheetsDispatched $event): void
+    public function handle(AllRowsExtracted $event): void
     {
         $file = ExcelFile::query()->with('excelSheets')->findOrFail($event->fileId);
 
@@ -51,8 +51,10 @@ final class HandleAllSheetsDispatched implements ShouldQueue
         $file->update(['status' => ExcelFileStatus::PROCESSING->value]);
     }
 
-    public function failed(AllSheetsDispatched $event, \Throwable $e): void
+    public function failed(AllRowsExtracted $event, \Throwable $e): void
     {
+        // TODO: clean up orphaned chunk records that may have been created before the failure
+
         Log::error('HandleAllSheetsDispatched failed', [
             'file_id' => $event->fileId,
             'error' => $e->getMessage(),

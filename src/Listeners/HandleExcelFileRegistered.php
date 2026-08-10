@@ -2,15 +2,15 @@
 
 namespace Akbarjimi\ExcelImporter\Listeners;
 
-use Akbarjimi\ExcelImporter\Events\ExcelUploaded;
-use Akbarjimi\ExcelImporter\Events\SheetsDiscovered;
+use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
+use Akbarjimi\ExcelImporter\Events\FileSheetsScanCompleted;
 use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelSheetRepository;
 use Akbarjimi\ExcelImporter\Services\SheetDiscoveryService;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 
-final class HandleExcelUploaded implements ShouldQueueAfterCommit
+final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
 
@@ -22,14 +22,14 @@ final class HandleExcelUploaded implements ShouldQueueAfterCommit
     {
     }
 
-    public function handle(ExcelUploaded $event): void
+    public function handle(ExcelFileRegistered $event): void
     {
-        $file = $this->fileRepo->findOrFail($event->fileId);
+        $file = $this->fileRepo->findFile($event->fileId, ['excelSheets']);
 
         $sheets = $this->discovery->discover($file);
 
         $this->sheetRepo->bulkCreate($file->id, $sheets);
 
-        event(new SheetsDiscovered($file->id));
+        event(new FileSheetsScanCompleted($file->id));
     }
 }
