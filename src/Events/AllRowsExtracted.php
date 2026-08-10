@@ -2,9 +2,9 @@
 
 namespace Akbarjimi\ExcelImporter\Events;
 
-final readonly class AllChunksCompleted
+final readonly class AllRowsExtracted
 {
     public function __construct(
-        public int $sheetId,
+        public int $fileId,
     ) {}
 }

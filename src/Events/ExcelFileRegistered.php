@@ -4,7 +4,7 @@ namespace Akbarjimi\ExcelImporter\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 
-final readonly class SheetsDiscovered
+final readonly class ExcelFileRegistered
 {
     use Dispatchable;
 

@@ -4,11 +4,11 @@ namespace Akbarjimi\ExcelImporter\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 
-final readonly class SheetDiscovered
+final readonly class FileSheetsScanCompleted
 {
     use Dispatchable;
 
-    public function __construct(public int $sheetId)
+    public function __construct(public int $fileId)
     {
     }
 }

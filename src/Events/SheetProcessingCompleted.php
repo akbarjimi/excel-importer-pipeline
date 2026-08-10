@@ -2,9 +2,9 @@
 
 namespace Akbarjimi\ExcelImporter\Events;
 
-final readonly class AllSheetsDispatched
+final readonly class SheetProcessingCompleted
 {
     public function __construct(
-        public int $fileId,
+        public int $sheetId,
     ) {}
 }
