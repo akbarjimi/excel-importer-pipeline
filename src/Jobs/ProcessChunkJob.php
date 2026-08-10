@@ -3,7 +3,7 @@
 namespace Akbarjimi\ExcelImporter\Jobs;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelRowStatus;
-use Akbarjimi\ExcelImporter\Events\AllChunksCompleted;
+use Akbarjimi\ExcelImporter\Events\SheetProcessingCompleted;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelRowChunk;
 use Akbarjimi\ExcelImporter\Models\ExcelRowError;
@@ -63,8 +63,11 @@ final class ProcessChunkJob implements ShouldQueue
         try {
             foreach ($rowsCursor as $row) {
                 try {
-                    $payload = $transform->apply($row->content ?? $row->toArray());
-                    $validate->apply($payload);
+                    $payload = $transform->apply($row->content ?? $row->toArray(), $sheet);
+
+                    if (!empty($errors = $validate->apply($payload))) {
+                        throw new \Exception($errors);
+                    }
 
                     $buffer[] = [
                         'id' => $row->id,
@@ -111,12 +114,12 @@ final class ProcessChunkJob implements ShouldQueue
             $sheetFresh = ExcelSheet::find($sheet->id);
             if ($sheetUpdated > 0) {
                 if ($sheetFresh->processed_chunks >= $sheetFresh->chunk_count && $sheetFresh->chunk_count > 0) {
-                    event(new AllChunksCompleted($sheetFresh->id));
+                    event(new SheetProcessingCompleted($sheetFresh->id));
                     Log::info('AllChunksCompleted fired (via increment)', ['sheet_id' => $sheetFresh->id]);
                 }
             } else {
                 if ($sheetFresh->processed_chunks >= $sheetFresh->chunk_count && $sheetFresh->chunk_count > 0) {
-                    event(new AllChunksCompleted($sheetFresh->id));
+                    event(new SheetProcessingCompleted($sheetFresh->id));
                     Log::info('AllChunksCompleted fired (fallback)', ['sheet_id' => $sheetFresh->id]);
                 }
             }
