@@ -1,6 +1,6 @@
 <?php
 
-use Akbarjimi\ExcelImporter\Events\ExcelUploaded;
+use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Services\ImportManager;
 use Illuminate\Support\Facades\Event;
@@ -17,5 +17,5 @@ it('stores metadata and dispatches ExcelUploaded', function () {
     expect($file)->toBeInstanceOf(ExcelFile::class)
         ->and($file->file_name)->toBe('sample.xlsx');
 
-    Event::assertDispatched(ExcelUploaded::class);
+    Event::assertDispatched(ExcelFileRegistered::class);
 });

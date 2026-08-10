@@ -2,9 +2,9 @@
 
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
-use Akbarjimi\ExcelImporter\Events\AllSheetsDispatched;
-use Akbarjimi\ExcelImporter\Events\ExcelUploaded;
-use Akbarjimi\ExcelImporter\Events\SheetDiscovered;
+use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
+use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
+use Akbarjimi\ExcelImporter\Events\SheetReadyForExtraction;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Services\ImportManager;
@@ -32,7 +32,7 @@ beforeEach(function () {
 });
 
 it('stores Excel file metadata in database', function () {
-    Event::fake([ExcelUploaded::class]);
+    Event::fake([ExcelFileRegistered::class]);
 
     $manager = app(ImportManager::class);
 
@@ -50,11 +50,11 @@ it('stores Excel file metadata in database', function () {
         'file_name' => $this->stubFileName,
     ]);
 
-    Event::assertDispatched(ExcelUploaded::class, fn ($event) => $event->file->id === $file->id);
+    Event::assertDispatched(ExcelFileRegistered::class, fn ($event) => $event->file->id === $file->id);
 });
 
 it('stores Excel sheet metadata in database after file is uploaded', function () {
-    Event::fake([SheetDiscovered::class]);
+    Event::fake([SheetReadyForExtraction::class]);
     $manager = app(ImportManager::class);
 
     $file = $manager->import($this->relativeTargetPath);
@@ -74,13 +74,13 @@ it('stores Excel sheet metadata in database after file is uploaded', function ()
 
 it('dispatches sheet events after importing Excel file', function () {
     Event::fake([
-        SheetDiscovered::class,
+        SheetReadyForExtraction::class,
     ]);
 
     $manager = app(ImportManager::class);
     $manager->import($this->relativeTargetPath);
 
-    Event::assertDispatched(SheetDiscovered::class);
+    Event::assertDispatched(SheetReadyForExtraction::class);
 
     $sheet = ExcelSheet::first();
     expect($sheet)->not->toBeNull();
@@ -88,7 +88,7 @@ it('dispatches sheet events after importing Excel file', function () {
 });
 
 it('extracts rows and fires AllSheetsDispatched when last sheet is processed', function () {
-    Event::fake([AllSheetsDispatched::class]);
+    Event::fake([AllRowsExtracted::class]);
 
     $manager = app(ImportManager::class);
     $file = $manager->import($this->relativeTargetPath);
@@ -97,7 +97,7 @@ it('extracts rows and fires AllSheetsDispatched when last sheet is processed', f
 
     $this->assertNotNull($file->excelSheets->first()->rows_extracted_at);
 
-    Event::assertDispatched(AllSheetsDispatched::class, function ($event) use ($file) {
+    Event::assertDispatched(AllRowsExtracted::class, function ($event) use ($file) {
         return $event->fileId === $file->getKey();
     });
 });

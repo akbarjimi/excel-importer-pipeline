@@ -1,7 +1,7 @@
 <?php
 
 use Akbarjimi\ExcelImporter\Listeners\HandleAllChunksCompleted;
-use Akbarjimi\ExcelImporter\Events\AllChunksCompleted;
+use Akbarjimi\ExcelImporter\Events\SheetProcessingCompleted;
 use Akbarjimi\ExcelImporter\Models\ExcelRowChunk;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Support\Facades\Queue;
@@ -20,7 +20,7 @@ beforeEach(function () {
 
 it('dispatches MapChunkJob for each pending chunk', function () {
     // Act
-    (new HandleAllChunksCompleted())->handle(new AllChunksCompleted($this->sheet->id));
+    (new HandleAllChunksCompleted())->handle(new SheetProcessingCompleted($this->sheet->id));
 
     // Assert
     Queue::assertPushed(MapChunkJob::class, 2);
@@ -29,7 +29,7 @@ it('dispatches MapChunkJob for each pending chunk', function () {
 it('skips chunks already mapped', function () {
     $this->chunks->first()->update(['mapping_status' => 'completed']);
 
-    (new HandleAllChunksCompleted())->handle(new AllChunksCompleted($this->sheet->id));
+    (new HandleAllChunksCompleted())->handle(new SheetProcessingCompleted($this->sheet->id));
 
     Queue::assertPushed(MapChunkJob::class, 1);
 });
