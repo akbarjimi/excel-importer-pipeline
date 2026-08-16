@@ -2,6 +2,7 @@
 
 **Distributed, fault-tolerant Excel importer for Laravel 10**
 
+![Tests](https://github.com/akbarjimi/excel-importer-enterprise/actions/workflows/tests.yml/badge.svg)
 > Supports queues, chunked processing, row-level error reporting, and configurability.
 
 ## Installation
