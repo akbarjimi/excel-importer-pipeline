@@ -28,12 +28,20 @@ class ExcelImporterServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind(ChunkService::class);
+
         $this->app->bind(RowExtractionService::class);
+
+        $this->app->singleton(ExcelReaderManager::class);
+
+        $this->app->bind(ExcelReaderDriver::class, function ($app) {
+            return $app->make(ExcelReaderManager::class)->driver();
+        });
 
         $this->mergeConfigFrom(
             __DIR__.'/config/excel-importer.php', 'excel-importer'
         );
         $this->loadFactoriesFrom(__DIR__.'/database/factories');
+
     }
 
     public function registerEventListeners(): void
