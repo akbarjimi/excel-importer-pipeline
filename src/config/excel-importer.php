@@ -14,4 +14,9 @@ return [
         'level' => 'info', // debug, info, warning, error
     ],
     'strict_validation' => false,
+    'driver' => env('EXCEL_IMPORTER_DRIVER', 'maatwebsite'),
+    'drivers' => [
+        'maatwebsite' => \Akbarjimi\ExcelImporter\Drivers\MaatwebsiteDriver::class,
+        'openspout'   => \Akbarjimi\ExcelImporter\Drivers\OpenSpoutDriver::class,
+    ],    
 ];
