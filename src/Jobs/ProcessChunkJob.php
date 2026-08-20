@@ -22,7 +22,8 @@ use Throwable;
 
 final class ProcessChunkJob implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable;
+    use Batchable, Dispatchable, InteractsWithQueue, Queueable;
+
 
     public function __construct(public readonly int $chunkId)
     {
