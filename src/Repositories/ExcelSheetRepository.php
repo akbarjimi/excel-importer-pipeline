@@ -25,9 +25,9 @@ final readonly class ExcelSheetRepository
         $rows = array_map(static fn(SheetInfo $sheet): array => [
             'excel_file_id' => $fileId,
             'name' => $sheet->name,
-            'index' => $sheet->index,
+            'sheet_index' => $sheet->index,
             'total_rows' => $sheet->totalRows,
-            'status' => ExcelSheetStatus::PENDING->value,
+            'status' => ExcelSheetStatus::PENDING,
             'meta' => json_encode($sheet->raw, JSON_THROW_ON_ERROR),
             'created_at' => $now,
             'updated_at' => $now,
@@ -35,7 +35,7 @@ final readonly class ExcelSheetRepository
 
         ExcelSheet::query()->upsert(
             $rows,
-            uniqueBy: ['excel_file_id', 'index'],
+            uniqueBy: ['excel_file_id', 'sheet_index'],
             update: ['name', 'total_rows', 'meta', 'updated_at'],
         );
     }
@@ -52,7 +52,7 @@ final readonly class ExcelSheetRepository
     {
         return ExcelSheet::query()
             ->where('excel_file_id', $fileId)
-            ->orderBy('index')
+            ->orderBy('sheet_index')
             ->get();
     }
 }
