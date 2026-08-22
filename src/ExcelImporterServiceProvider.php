@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter;
 
 use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
@@ -27,6 +29,12 @@ class ExcelImporterServiceProvider extends ServiceProvider
 
     public function register()
     {
+        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'excel-importer');
+
+        $this->publishes([
+            __DIR__ . '/../../lang' => $this->app->langPath('vendor/excel-importer'),
+        ], 'excel-importer-lang');
+
         $this->app->bind(ChunkService::class);
 
         $this->app->bind(RowExtractionService::class);

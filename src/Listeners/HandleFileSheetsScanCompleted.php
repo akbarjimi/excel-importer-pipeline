@@ -1,5 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
+
 namespace Akbarjimi\ExcelImporter\Listeners;
 
 use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
@@ -22,19 +25,31 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
 
     public function __construct(
         private readonly ExcelSheetRepository $sheetRepo,
-        private readonly ExcelFileRepository $fileRepo,
-    ) {}
+        private readonly ExcelFileRepository  $fileRepo,
+    )
+    {
+    }
+
+    public function viaQueue(): string
+    {
+        return config('excel-importer.queue', 'default');
+    }
 
     public function handle(FileSheetsScanCompleted $event): void
     {
         $sheets = $this->sheetRepo->getByFileId($event->fileId);
 
-        if ($sheets->count() > config('excel-importer.max_sheets', 50)) {
-            $this->fileRepo->markFailed($event->fileId);
-            $this->importLog('warning', 'Excel import rejected: sheet count exceeds limit', [
-                'file_id' => $event->fileId,
-                'sheet_count' => $sheets->count(),
+        $limit = config('excel-importer.max_sheets', 50);
+
+        if ($sheets->count() > $limit) {
+            $this->fileRepo->markAsFailed($event->fileId);
+
+            $message = trans('excel-importer::messages.sheet_limit_exceeded', [
+                'count' => $sheets->count(),
+                'limit' => $limit,
             ]);
+
+            $this->importLog('warning', $message, ['excel_file_id' => $event->fileId,]);
 
             return;
         }
@@ -42,15 +57,20 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
         $fileId = $event->fileId;
 
         $jobs = $sheets->map(
-            fn ($sheet) => new ExtractSheetRowsJob($sheet->id)
+            static fn(object $sheet): ExtractSheetRowsJob => new ExtractSheetRowsJob($sheet->id)
         )->all();
 
+        if ($jobs->isEmpty()) {
+            $this->fileRepo->markAsRowsExtracted($event->fileId);
+            AllRowsExtracted::dispatch($fileId);
+        }
+
         Bus::batch($jobs)
-            ->then(function (Batch $batch) use ($fileId) {
+            ->then(static function (Batch $batch) use ($fileId) {
                 app(ExcelFileRepository::class)->markAsRowsExtracted($fileId);
                 AllRowsExtracted::dispatch($fileId);
             })
-            ->catch(function (Batch $batch, Throwable $e) use ($fileId) {
+            ->catch(static function (Batch $batch, Throwable $e) use ($fileId) {
                 app(ExcelFileRepository::class)->markAsFailed($fileId);
             })
             ->name("excel-import:{$fileId}")

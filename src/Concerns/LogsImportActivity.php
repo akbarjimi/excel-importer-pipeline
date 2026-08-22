@@ -1,20 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Concerns;
 
 use Illuminate\Support\Facades\Log;
 
 trait LogsImportActivity
 {
+    /**
+     * Write a structured log entry to the package channel.
+     *
+     * @param  array<string, mixed>  $context
+     */
     protected function importLog(string $level, string $message, array $context = []): void
     {
-        if (! config('excel-importer.logging.enabled', true)) {
-            return;
-        }
-
-        $channels = (array) config('excel-importer.logging.channels', ['stack']);
-
-        Log::stack($channels)->$level($message, $context);
+        Log::channel(config('excel-importer.logging.channels', config('logging.default', 'stack')))
+            ->log($level, $message, array_merge(['package' => 'excel-importer'], $context));
     }
 
 }
