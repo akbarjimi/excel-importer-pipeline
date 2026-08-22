@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Events;
 
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Foundation\Events\Dispatchable;
 
-final readonly class ExcelFileRegistered
+class ExcelFileRegistered implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
 
-    public function __construct(public int $fileId)
-    {
-    }
+    public function __construct(public readonly int $excelFileId) {}
 }
