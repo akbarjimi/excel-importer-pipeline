@@ -9,33 +9,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('excel_sheets', function (Blueprint $table) {
+        Schema::create('excel_sheets', static function (Blueprint $table): void {
             $table->id();
 
-            $table->foreignId('excel_file_id')
-                ->constrained()
-                ->onDelete('cascade')
-                ->index();
+            $table->foreignId('excel_file_id')->constrained()->onDelete('cascade');
 
             $table->string('name');
 
-            $table->enum('status', array_column(ExcelSheetStatus::cases(), 'value'))
-                ->default(ExcelSheetStatus::PENDING->value)
-                ->index();
+            $table->unsignedTinyInteger('sheet_index');
 
-            $table->unsignedInteger('rows_count')->nullable();
-            $table->timestamp('rows_extracted_at')->nullable();
-            $table->index(['excel_file_id', 'rows_extracted_at']);
+            $table->unsignedInteger('total_rows');
 
-            $table->unsignedInteger('chunk_count')->default(0);
-
-            $table->unsignedInteger('processed_chunks')->default(0);
-
-            $table->unsignedInteger('mapped_count')->default(0);
-            $table->timestamp('mapped_at')->nullable();
+            $table->string('status', 32)->default(ExcelSheetStatus::PENDING)->index();
 
             $table->json('meta')->nullable();
-            $table->text('exception')->nullable();
+
+            // Enforced at the database level so that upsert operations during
+            // discovery retries never produce duplicate sheet rows.
+            $table->unique(['excel_file_id', 'sheet_index']);
 
             $table->timestamps();
         });
