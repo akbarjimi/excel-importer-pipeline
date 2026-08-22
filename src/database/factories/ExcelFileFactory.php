@@ -13,17 +13,11 @@ class ExcelFileFactory extends Factory
     public function definition(): array
     {
         return [
-            'file_name' => $this->faker->word().'.xlsx',
-            'path' => 'testing/'.$this->faker->uuid().'.xlsx',
-            'driver' => 'local',
-            'status' => ExcelFileStatus::PENDING->value,
-            'extracted_at' => null,
-            'processed_at' => null,
-            'failed_at' => null,
-            'meta' => null,
-            'exception' => null,
-            'owner_id' => null,
-            'owner_type' => null,
+            'file_name' => $this->faker->word() . '.xlsx',
+            'path' => 'testing/' . $this->faker->uuid() . '.xlsx',
+            'disk' => 'local',
+            'size' => $this->faker->numberBetween(1024, 10485760), // 1KB to 10MB
+            'status' => ExcelFileStatus::PENDING,
         ];
     }
 }
