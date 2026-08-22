@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Repositories;
 
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
@@ -7,11 +9,17 @@ use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Support\Collection;
 
-
 final readonly class ExcelSheetRepository
 {
+    /**
+     * @param array<int, SheetInfo> $sheets
+     */
     public function bulkCreate(int $fileId, array $sheets): void
     {
+        if ($sheets === []) {
+            return;
+        }
+
         $now = now();
 
         $rows = array_map(static fn(SheetInfo $sheet): array => [
@@ -20,12 +28,21 @@ final readonly class ExcelSheetRepository
             'index' => $sheet->index,
             'total_rows' => $sheet->totalRows,
             'status' => ExcelSheetStatus::PENDING->value,
-            'meta' => json_encode($sheet->raw),
+            'meta' => json_encode($sheet->raw, JSON_THROW_ON_ERROR),
             'created_at' => $now,
             'updated_at' => $now,
         ], $sheets);
 
-        ExcelSheet::query()->insert($rows);
+        ExcelSheet::query()->upsert(
+            $rows,
+            uniqueBy: ['excel_file_id', 'index'],
+            update: ['name', 'total_rows', 'meta', 'updated_at'],
+        );
+    }
+
+    public function existsForFile(int $fileId): bool
+    {
+        return ExcelSheet::query()->where('excel_file_id', $fileId)->exists();
     }
 
     /**
