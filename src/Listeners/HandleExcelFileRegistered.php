@@ -46,7 +46,7 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
             return;
         }
 
-        $this->fileRepo->markReading($file->id);
+        $this->fileRepo->markAsReading($file->id);
 
         $sheets = $this->discovery->discover($file);
 
@@ -57,6 +57,6 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
     public function failed(ExcelFileRegistered $event, Throwable $e): void
     {
-        $this->fileRepo->markFailed($event->excelFileId, $e->getMessage());
+        $this->fileRepo->markAsFailed($event->excelFileId, $e->getMessage());
     }
 }

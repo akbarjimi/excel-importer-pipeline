@@ -17,14 +17,14 @@ class ExcelFileRepository
         return ExcelFile::query()->with($relations)->find($fileId);
     }
 
-    public function markReading(int $fileId): void
+    public function markAsReading(int $fileId): void
     {
         ExcelFile::query()->whereKey($fileId)->update([
             'status' => ExcelFileStatus::READING->value,
         ]);
     }
 
-    public function markRowsExtracted(int $fileId): void
+    public function markAsRowsExtracted(int $fileId): void
     {
         ExcelFile::query()->whereKey($fileId)->update([
             'status' => ExcelFileStatus::ROWS_EXTRACTED->value,
@@ -32,7 +32,7 @@ class ExcelFileRepository
         ]);
     }
 
-    public function markFailed(int $fileId): void
+    public function markAsFailed(int $fileId): void
     {
         ExcelFile::query()->whereKey($fileId)->update([
             'status' => ExcelFileStatus::FAILED->value,

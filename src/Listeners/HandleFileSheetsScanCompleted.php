@@ -47,11 +47,11 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
 
         Bus::batch($jobs)
             ->then(function (Batch $batch) use ($fileId) {
-                app(ExcelFileRepository::class)->markRowsExtracted($fileId);
+                app(ExcelFileRepository::class)->markAsRowsExtracted($fileId);
                 AllRowsExtracted::dispatch($fileId);
             })
             ->catch(function (Batch $batch, Throwable $e) use ($fileId) {
-                app(ExcelFileRepository::class)->markFailed($fileId);
+                app(ExcelFileRepository::class)->markAsFailed($fileId);
             })
             ->name("excel-import:{$fileId}")
             ->dispatch();
