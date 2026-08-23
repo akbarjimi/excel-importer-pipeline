@@ -22,4 +22,5 @@ return [
     'sheets_already_exist'  => 'Sheets for file [:file_id] were already persisted; re-emitting scan completed event.',
     'discovery_failed'      => 'Sheet discovery failed for file [:file_id]: :message',
     'extraction_failed'     => 'Batch extraction failed for file [:file_id]: :message',
+    'no_chunks_created'     => 'Batch extraction failed for file [:file_id]: :message',
 ];

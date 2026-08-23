@@ -38,4 +38,18 @@ class ExcelFileRepository
             'status' => ExcelFileStatus::FAILED->value,
         ]);
     }
+
+    public function markAsProcessing(int $fileId): void
+    {
+        ExcelFile::query()->whereKey($fileId)->update([
+            'status' => ExcelFileStatus::PROCESSING->value,
+        ]);
+    }
+
+    public function markAsCompleted(int $fileId): void
+    {
+        ExcelFile::query()->whereKey($fileId)->update([
+            'status' => ExcelFileStatus::COMPLETED->value,
+        ]);
+    }
 }

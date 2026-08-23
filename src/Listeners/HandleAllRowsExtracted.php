@@ -1,67 +1,107 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Listeners;
 
-use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
+use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
+use Akbarjimi\ExcelImporter\Events\FileProcessingCompleted;
 use Akbarjimi\ExcelImporter\Jobs\ProcessChunkJob;
-use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 use Akbarjimi\ExcelImporter\Services\ChunkerService;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Batch;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
+use Throwable;
 
-final class HandleAllRowsExtracted implements ShouldQueue
+final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
 {
-    use InteractsWithQueue;
+    use LogsImportActivity;
 
     public int $tries = 3;
 
     public int $timeout = 60;
 
-    public function __construct(private readonly ChunkerService $chunker) {}
+    public function __construct(
+        private readonly ChunkerService      $chunker,
+        private readonly ExcelFileRepository $fileRepo,
+    )
+    {
+    }
 
+    public function viaQueue(): string
+    {
+        return config('excel-importer.queue', 'default');
+    }
+
+
+    /**
+     * Handle the event: partition the extracted rows and dispatch processing jobs.
+     */
     public function handle(AllRowsExtracted $event): void
     {
-        $file = ExcelFile::query()->with('excelSheets')->findOrFail($event->fileId);
+        $file = $this->fileRepo->findFile($event->fileId, ['excelSheets']);
+
+        if ($file === null) {
+            $this->importLog('warning', trans('excel-importer::messages.file_missing_on_retry', [
+                'file_id' => $event->fileId,
+            ]));
+            return;
+        }
 
         // Create all chunks transactionally
         $chunks = $this->chunker->createChunksForFile($file);
 
         if ($chunks->isEmpty()) {
-            Log::warning('No chunks created for file', ['file_id' => $file->getKey()]);
+            $this->importLog('warning', trans('excel-importer::messages.no_chunks_created', [
+                'file_id' => $file->id,
+            ]));
 
             return;
         }
 
-        // Dispatch AFTER COMMIT to avoid enqueuing for rolled-back rows
-        $batch = Bus::batch(
-            $chunks->map(fn ($c) => (new ProcessChunkJob($c->getKey()))->afterCommit())
-        )->name("excel-file:{$file->getKey()}:row-chunks")
-            ->onQueue(config('excel-importer.queue', 'default'))
+        $fileId = $file->id;
+        $this->fileRepo->markAsProcessing($fileId);
+
+        $jobs = $chunks->map(
+            static fn(object $chunk): ProcessChunkJob => new ProcessChunkJob($chunk->id)
+        )->all();
+        $batch = Bus::batch($jobs)
+            ->then(static function (Batch $batch) use ($fileId): void {
+                app(ExcelFileRepository::class)->markAsCompleted($fileId);
+                FileProcessingCompleted::dispatch($fileId);
+            })
+            ->catch(static function (Batch $batch, Throwable $e) use ($fileId): void {
+                app(ExcelFileRepository::class)->markAsFailed($fileId); // Log detailed error from the batch failure, satisfying audit requirements.
+                app(ExcelFileRepository::class)->logBatchFailure($fileId, $e);
+            })
+            ->name("excel-import-chunks:{$file->getKey()}")
             ->dispatch();
 
-        Log::info('Chunk jobs batched', [
-            'file_id' => $file->getKey(),
-            'batch_id' => $batch->id,
-            'jobs' => $chunks->count(),
-        ]);
+        $this->importLog('info', trans('excel-importer::messages.chunk_jobs_batched', [
+                'file_id' => $fileId,
+                'count' => $jobs->count(),
+            ]
+        ));
 
-        $file->update(['status' => ExcelFileStatus::PROCESSING->value]);
     }
 
-    public function failed(AllRowsExtracted $event, \Throwable $e): void
+    /**
+     * Clean up state if the listener itself fails after all retries are exhausted.
+     *
+     * @param AllRowsExtracted $event
+     * @param Throwable $e
+     * @return void
+     */
+    public function failed(AllRowsExtracted $event, Throwable $e): void
     {
-        // TODO: clean up orphaned chunk records that may have been created before the failure
+        $this->importLog('error', trans('excel-importer::messages.extraction_failed', [
+                'file_id' => $event->fileId,
+                'message' => $e->getMessage(),
+            ]
+        ), ['exception' => $e]);
 
-        Log::error('HandleAllSheetsDispatched failed', [
-            'file_id' => $event->fileId,
-            'error' => $e->getMessage(),
-        ]);
-
-        ExcelFile::whereKey($event->fileId)->update([
-            'status' => ExcelFileStatus::FAILED->value,
-        ]);
+        $this->fileRepo->markAsFailed($event->fileId);
     }
 }
