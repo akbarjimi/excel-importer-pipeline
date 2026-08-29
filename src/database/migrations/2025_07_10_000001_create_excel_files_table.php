@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->enum('status', array_column(ExcelFileStatus::cases(), 'value'))
                 ->default(ExcelFileStatus::PENDING->value)
                 ->index();
+            $table->json('meta')->nullable();
 
             $table->timestamps();
         });
