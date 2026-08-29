@@ -2,6 +2,8 @@
 
 namespace Akbarjimi\ExcelImporter\Repositories;
 
+use Akbarjimi\ExcelImporter\Enums\ExcelRowStatus;
+use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Illuminate\Support\Facades\DB;
 
 final class ExcelRowRepository
@@ -27,5 +29,18 @@ final class ExcelRowRepository
                     ['content', 'status', 'chunk_index', 'row_index', 'updated_at']
                 );
             });
+    }
+
+    public function getValidatedRowsForFile(int $fileId): \Illuminate\Support\LazyCollection
+    {
+        return ExcelRow::query()
+            ->whereHas('excelSheet', fn($q) => $q->where('excel_file_id', $fileId))
+            ->where('status', ExcelRowStatus::PROCESSED)
+            ->orderBy('id')
+            ->lazy()
+            ->map(fn(ExcelRow $row) => [
+                'row_index' => $row->row_index,
+                'data'      => $row->content,
+            ]);
     }
 }
