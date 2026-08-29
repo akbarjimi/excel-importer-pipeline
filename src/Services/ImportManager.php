@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Storage;
  * content is read here: this method is deliberately cheap enough to be
  * called synchronously from an HTTP controller.
  */
-readonly class ImportManager
+class ImportManager
 {
     /**
      * Register a spreadsheet that exists on a filesystem disk.
@@ -29,7 +29,7 @@ readonly class ImportManager
      *
      * @throws ImportFileNotFoundException When the file cannot be found on the given disk.
      */
-    public function import(string $path, ?string $disk = null): ExcelFile
+    public function import(string $path, ?string $disk = null, ?string $handler = null): ExcelFile
     {
         $disk ??= config('excel-importer.default_disk', config('filesystems.default'));
 
@@ -46,6 +46,7 @@ readonly class ImportManager
                 'disk' => $disk,
                 'size' => $storage->size($path),
                 'status' => ExcelFileStatus::PENDING,
+                'meta' => ['handler' => $handler],
             ]);
 
             // Dispatching inside the transaction is safe because the event
