@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Exceptions;
 
 use RuntimeException;
 
-class ImportFileNotFoundException extends RuntimeException
+final class ImportFileNotFoundException extends RuntimeException
 {
     public static function make(string $disk, string $path): self
     {
-        return new self("Excel import source [{$path}] was not found on disk [{$disk}].");
+        return new self(sprintf('Excel file [%s] not found on disk [%s].', $path, $disk));
     }
 }
