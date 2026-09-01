@@ -57,5 +57,6 @@ class ExcelImporterServiceProvider extends ServiceProvider
         Event::listen(ExcelFileRegistered::class, HandleExcelFileRegistered::class);
         Event::listen(FileSheetsScanCompleted::class, HandleFileSheetsScanCompleted::class);
         Event::listen(AllRowsExtracted::class, HandleAllRowsExtracted::class);
+        Event::listen(FileProcessingCompleted::class, InvokeImportHandler::class);
     }
 }
