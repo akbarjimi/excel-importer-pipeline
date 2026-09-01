@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Akbarjimi\ExcelImporter\Listeners;
 
 use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
+use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Events\FileSheetsScanCompleted;
 use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
@@ -24,18 +25,17 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
     public function __construct(
         private readonly SheetDiscoveryService $discovery,
-        private readonly ExcelFileRepository $fileRepo,
-        private readonly ExcelSheetRepository $sheetRepo,
-    ) {}
+        private readonly ExcelFileRepository   $fileRepo,
+        private readonly ExcelSheetRepository  $sheetRepo,
+    )
+    {
+    }
 
     public function viaQueue(): string
     {
         return config('excel-importer.queue', 'default');
     }
 
-    /**
-     * Tags for Horizon / Pulse observability.
-     */
     public function tags(): array
     {
         return ['excel-registered', "file:{$this->event?->excelFileId}"];
@@ -46,12 +46,12 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
         $file = $this->fileRepo->findFile($event->excelFileId);
 
         if ($file === null) {
-            $this->importLog('warning', 'File not found for discovery', ['file_id' => $event->excelFileId]);
+            $this->importLog(LogLevel::WARNING, 'excel-importer::file_not_found', ['file_id' => $event->excelFileId]);
             return;
         }
 
         if ($this->sheetRepo->existsForFile($file->id)) {
-            $this->importLog('info', 'Sheets already discovered, skipping', ['file_id' => $file->id]);
+            $this->importLog(LogLevel::INFO, 'excel-importer::sheets_already_discovered', ['file_id' => $file->id]);
             FileSheetsScanCompleted::dispatch($file->id);
             return;
         }
@@ -60,19 +60,25 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
         try {
             $sheets = $this->discovery->discover($file);
+
+            if (empty($sheets)) {
+                $this->importLog(LogLevel::WARNING, 'excel-importer::no_sheets_found', ['file_id' => $file->id]);
+                $this->fileRepo->markAsFailed($file->id, 'No sheets discovered');
+                return;
+            }
+
             $this->sheetRepo->bulkCreate($file->id, $sheets);
+            $this->importLog(LogLevel::INFO, 'excel-importer::sheet_discovery_completed', [
+                'file_id' => $file->id,
+                'count' => count($sheets),
+            ]);
 
             FileSheetsScanCompleted::dispatch($file->id);
-
-            $this->importLog('info', 'Sheet discovery completed', [
-                'file_id'   => $file->id,
-                'sheet_count' => count($sheets),
-            ]);
         } catch (Throwable $e) {
             $this->fileRepo->markAsFailed($file->id, $e->getMessage());
-            $this->importLog('error', 'Sheet discovery failed', [
+            $this->importLog(LogLevel::ERROR, 'excel-importer::sheet_discovery_failed', [
                 'file_id' => $file->id,
-                'error'   => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -81,9 +87,9 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
     public function failed(ExcelFileRegistered $event, Throwable $e): void
     {
         $this->fileRepo->markAsFailed($event->excelFileId, $e->getMessage());
-        $this->importLog('critical', 'Listener failed after retries', [
+        $this->importLog(LogLevel::CRITICAL, 'excel-importer::listener_failed_after_retries', [
             'file_id' => $event->excelFileId,
-            'error'   => $e->getMessage(),
+            'error' => $e->getMessage(),
         ]);
     }
 }
