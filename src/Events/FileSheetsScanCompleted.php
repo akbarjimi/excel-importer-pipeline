@@ -4,7 +4,7 @@ namespace Akbarjimi\ExcelImporter\Events;
 
 use Illuminate\Foundation\Events\Dispatchable;
 
-final readonly class FileSheetsScanCompleted
+final class FileSheetsScanCompleted
 {
     use Dispatchable;
 
