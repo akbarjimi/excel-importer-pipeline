@@ -6,31 +6,33 @@ namespace Akbarjimi\ExcelImporter\Repositories;
 
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
+use Akbarjimi\ExcelImporter\Exceptions\EmptySheetException;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Support\Collection;
 
-final readonly class ExcelSheetRepository
+final class ExcelSheetRepository
 {
     /**
      * @param array<int, SheetInfo> $sheets
+     * @throws EmptySheetException
      */
     public function bulkCreate(int $fileId, array $sheets): void
     {
         if ($sheets === []) {
-            return;
+            throw EmptySheetException::forFile($fileId);
         }
 
         $now = now();
 
         $rows = array_map(static fn(SheetInfo $sheet): array => [
             'excel_file_id' => $fileId,
-            'name' => $sheet->name,
-            'sheet_index' => $sheet->index,
-            'total_rows' => $sheet->totalRows,
-            'status' => ExcelSheetStatus::PENDING,
-            'meta' => json_encode($sheet->raw, JSON_THROW_ON_ERROR),
-            'created_at' => $now,
-            'updated_at' => $now,
+            'name'          => $sheet->name,
+            'sheet_index'   => $sheet->index,
+            'total_rows'    => $sheet->totalRows,
+            'status'        => ExcelSheetStatus::PENDING->value,
+            'meta'          => json_encode($sheet->raw, JSON_THROW_ON_ERROR),
+            'created_at'    => $now,
+            'updated_at'    => $now,
         ], $sheets);
 
         ExcelSheet::query()->upsert(
@@ -54,5 +56,10 @@ final readonly class ExcelSheetRepository
             ->where('excel_file_id', $fileId)
             ->orderBy('sheet_index')
             ->get();
+    }
+
+    public function getById(int $sheetId): ?ExcelSheet
+    {
+        return ExcelSheet::find($sheetId);
     }
 }

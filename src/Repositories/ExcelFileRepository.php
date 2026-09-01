@@ -6,9 +6,10 @@ namespace Akbarjimi\ExcelImporter\Repositories;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
-class ExcelFileRepository
+final class ExcelFileRepository
 {
     /**
      * @param array<int, string> $relations
@@ -18,85 +19,54 @@ class ExcelFileRepository
         return ExcelFile::query()->with($relations)->find($fileId);
     }
 
+    /**
+     * Generic status update.
+     */
+    public function markAs(int $fileId, ExcelFileStatus $status, array $extra = []): void
+    {
+        $data = ['status' => $status->value] + $extra;
+        ExcelFile::query()->whereKey($fileId)->update($data);
+    }
+
     public function markAsReading(int $fileId): void
     {
-        ExcelFile::query()->whereKey($fileId)->update([
-            'status' => ExcelFileStatus::READING->value,
-        ]);
+        $this->markAs($fileId, ExcelFileStatus::READING);
     }
 
     public function markAsRowsExtracted(int $fileId): void
     {
-        ExcelFile::query()->whereKey($fileId)->update([
-            'status' => ExcelFileStatus::ROWS_EXTRACTED->value,
-            'rows_extracted_at' => now(),
-        ]);
+        $this->markAs($fileId, ExcelFileStatus::ROWS_EXTRACTED, ['rows_extracted_at' => now()]);
     }
 
-    public function markAsFailed(int $fileId): void
+    public function markAsFailed(int $fileId, ?string $reason = null): void
     {
-        ExcelFile::query()->whereKey($fileId)->update([
-            'status' => ExcelFileStatus::FAILED->value,
-        ]);
+        $extra = [];
+        if ($reason !== null) {
+            $extra['error'] = $reason;
+        }
+        $this->markAs($fileId, ExcelFileStatus::FAILED, $extra);
     }
 
     public function markAsProcessing(int $fileId): void
     {
-        ExcelFile::query()->whereKey($fileId)->update([
-            'status' => ExcelFileStatus::PROCESSING->value,
-        ]);
+        $this->markAs($fileId, ExcelFileStatus::PROCESSING);
     }
 
     public function markAsCompleted(int $fileId): void
     {
-        ExcelFile::query()->whereKey($fileId)->update([
-            'status' => ExcelFileStatus::COMPLETED->value,
-        ]);
+        $this->markAs($fileId, ExcelFileStatus::COMPLETED, ['completed_at' => now()]);
     }
 
-    /**
-     * Log a failure that occurred at the batch level (e.g. queue timeout or
-     * unhandled exception in the batch logic) rather than a specific row error.
-     */
+    public function getHandler(int $fileId): ?string
+    {
+        return ExcelFile::query()->whereKey($fileId)->value('meta->handler');
+    }
+
     public function logBatchFailure(int $fileId, Throwable $exception): void
     {
-        // This ensures that even if individual rows don't fail,
-        // the developer knows why the entire file import stopped.
         activity()
             ->performedOn(ExcelFile::find($fileId))
             ->withProperties(['error' => $exception->getMessage()])
             ->log('import_batch_failed');
     }
-
-    public function markAsCompletedById(int $fileId): void
-    {
-        ExcelFile::whereKey($fileId)->update([
-            'status'       => ExcelFileStatus::COMPLETED->value,
-            'completed_at' => now(),
-        ]);
-    }
-
-    public function markAsFailedById(int $fileId, string $reason): void
-    {
-        ExcelFile::whereKey($fileId)->update([
-            'status' => ExcelFileStatus::FAILED->value,
-            'error'  => $reason,
-        ]);
-    }
-
-    public function recordBatchId(int $fileId, string $batchId): void
-    {
-        ExcelFile::whereKey($fileId)->update(['batch_id' => $batchId]);
-    }
-
-    public function setHandler(int $fileId, string $handler): void
-    {
-        ExcelFile::whereKey($fileId)->update(['meta->handler' => $handler]);
-    }
-
-    public function getHandler(int $fileId): ?string
-    {
-        return ExcelFile::whereKey($fileId)->value('meta->handler');
-    }
-
 }

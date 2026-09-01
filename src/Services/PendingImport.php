@@ -21,7 +21,7 @@ final class PendingImport
     public function __construct(
         private readonly string $path,
         private readonly string $disk,
-        private readonly FilesystemFactory $storage = new FilesystemFactory(),
+        private readonly FilesystemFactory $storageFactory,
     ) {}
 
     public function withHandler(string $handlerClass): self
@@ -50,14 +50,15 @@ final class PendingImport
      */
     public function dispatch(): ExcelFile
     {
-        throw_unless(isset($this->handler), MissingHandlerException::class);
+        if (!isset($this->handler)) {
+            throw MissingHandlerException::make();
+        }
 
-        $storage = $this->storage->disk($this->disk);
+        $storage = $this->storageFactory->disk($this->disk);
 
-        throw_unless($storage->exists($this->path), ImportFileNotFoundException::class, [
-            'disk' => $this->disk,
-            'path' => $this->path,
-        ]);
+        if (!$storage->exists($this->path)) {
+            throw ImportFileNotFoundException::make($this->disk, $this->path);
+        }
 
         return DB::transaction(function () use ($storage) {
             $file = ExcelFile::query()->create([
@@ -72,7 +73,6 @@ final class PendingImport
                 ),
             ]);
 
-            // Will be dispatched after commit (uses ShouldDispatchAfterCommit)
             ExcelFileRegistered::dispatch($file->id);
 
             return $file;

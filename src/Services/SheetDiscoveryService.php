@@ -4,40 +4,38 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Services;
 
+use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use RuntimeException;
 
-final readonly class SheetDiscoveryService
+
+final class SheetDiscoveryService
 {
+
+    public function __construct(
+        private FilesystemFactory $storage,
+        private ExcelReaderDriver $driver,
+    )
+    {
+    }
+
     /**
-     * Read only the workbook's structural metadata (sheet names + dimensions).
-     * This never materialises cell data, so it stays cheap even for very large files.
-     *
      * @return list<SheetInfo>
      */
     public function discover(ExcelFile $file): array
     {
-        $disk = Storage::disk($file->disk);
+        $disk = $this->storage->disk($file->disk);
 
-        // PhpSpreadsheet requires a local, seekable path. A local disk exposes one
-        // directly; a remote disk (s3, gcs, ...) must be streamed to a temp file first.
         $localPath = $this->resolveLocalPath($disk, $file->path);
         $isTemp = $localPath !== $disk->path($file->path);
 
         try {
-            $reader = IOFactory::createReaderForFile($localPath);
-
-            $worksheetsInfo = $reader->listWorksheetInfo($localPath);
-
-            return array_values(array_map(
-                static fn(array $info, int $index): SheetInfo => SheetInfo::fromPhpSpreadsheet($info, $index),
-                $worksheetsInfo,
-                array_keys($worksheetsInfo),
-            ));
+            return $this->driver->listSheets($localPath);
         } finally {
             if ($isTemp && is_file($localPath)) {
                 @unlink($localPath);

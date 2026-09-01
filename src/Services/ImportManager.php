@@ -6,7 +6,7 @@ namespace Akbarjimi\ExcelImporter\Services;
 
 use Illuminate\Contracts\Config\Repository as Config;
 
-final  class ImportManager
+final class ImportManager
 {
     public function __construct(private Config $config)
     {

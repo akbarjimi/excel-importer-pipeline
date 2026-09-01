@@ -10,6 +10,7 @@ final class MissingHandlerException extends RuntimeException
 {
     public static function make(): self
     {
-        return new self('No handler set for this import. Call withHandler() before dispatch().');
+        return new self(trans('excel-importer::handler_missing'));
+
     }
 }

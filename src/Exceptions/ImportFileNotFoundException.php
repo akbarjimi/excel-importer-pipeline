@@ -10,6 +10,6 @@ final class ImportFileNotFoundException extends RuntimeException
 {
     public static function make(string $disk, string $path): self
     {
-        return new self(sprintf('Excel file [%s] not found on disk [%s].', $path, $disk));
+        return new self(trans('excel-importer::file_not_found', ['disk' => $disk, 'path' => $path]));
     }
 }

@@ -3,24 +3,21 @@
 declare(strict_types=1);
 
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Import Pipeline Messages
-    |--------------------------------------------------------------------------
-    |
-    | All user-facing and log strings produced by the import pipeline.
-    | Publish this file and provide a translation to support other locales:
-    |
-    |     php artisan vendor:publish --tag=excel-importer-lang
-    |
-    */
-
-    'file_not_found'        => 'Import file not found on disk [:disk] at path [:path].',
-    'sheet_limit_exceeded'  => 'Import rejected: the workbook contains :count sheets, which exceeds the configured limit of :limit.',
-    'file_missing_on_retry' => 'Import file [:file_id] no longer exists; skipping listener.',
-    'sheets_already_exist'  => 'Sheets for file [:file_id] were already persisted; re-emitting scan completed event.',
-    'discovery_failed'      => 'Sheet discovery failed for file [:file_id]: :message',
-    'extraction_failed'     => 'Batch extraction failed for file [:file_id]: :message',
-    'no_chunks_created'     => 'Batch extraction failed for file [:file_id]: :message',
+    'file_not_found' => 'Excel file [:path] not found on disk [:disk].',
+    'handler_missing' => 'No handler set for import. Call withHandler() before dispatch().',
+    'sheet_discovery_started' => 'Starting sheet discovery for file :file_id.',
+    'sheet_discovery_completed' => 'Sheets discovered for file :file_id. Count: :count.',
+    'sheet_discovery_failed' => 'Sheet discovery failed for file :file_id. Error: :error.',
+    'listener_failed_after_retries' => 'Listener failed after retries for file :file_id. Error: :error.',
+    'sheets_already_discovered' => 'Sheets already exist for file :file_id. Skipping discovery.',
+    'file_processing_completed' => 'File processing completed for file :file_id.',
+    'chunk_processing_started' => 'Processing chunk :chunk_id for file :file_id.',
+    'chunk_processing_completed' => 'Chunk :chunk_id processed for file :file_id.',
+    'chunk_processing_failed' => 'Chunk :chunk_id failed for file :file_id. Error: :error.',
+    'sheet_limit_exceeded' => 'File contains :count sheets, which exceeds the maximum of :limit.',
+    'extraction_success' => 'Extracted :rows rows from sheet :sheet_id.',
+    'extraction_failed' => 'Extraction failed for sheet :sheet_id. Error: :error.',
+    'extraction_batch_completed' => 'All sheets extracted for file :file_id.',
+    'extraction_batch_failed' => 'Extraction batch failed for file :file_id. Error: :error.',
+    'no_sheets_to_extract' => 'No sheets found for file :file_id – marking as extracted.',
 ];
