@@ -1,19 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Services;
 
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\Validator;
 
 final class ValidateService
 {
+    public function __construct(private Config $config) {}
+
     public function apply(array $payload, ExcelSheet $sheet): array
     {
-        $rules = Config::get('excel-importer-sheets.'.$sheet->name.'.validation', []);
+        $rules = $this->config->get("excel-importer-sheets.{$sheet->name}.validation", []);
+
         if (empty($rules)) {
-            if (Config::get('excel-importer.strict_validation', false)) {
-                throw new \RuntimeException("No validation rules loaded for this sheet.");
+            if ($this->config->get('excel-importer.strict_validation', false)) {
+                throw new \RuntimeException("No validation rules loaded for sheet [{$sheet->name}].");
             }
             return [];
         }
