@@ -1,63 +1,72 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Services;
 
+use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
+use Akbarjimi\ExcelImporter\Enums\ExcelChunkStatus;
+use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelRowChunk;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 final class ChunkerService
 {
+    use LogsImportActivity;
+
     public function __construct(private readonly int $chunkSize = 1000) {}
 
     /**
-     * Atomically creates ALL chunks for ALL sheets in a file and marks them dispatchable.
-     * Dispatch should happen AFTER COMMIT (jobs use ->afterCommit()).
+     * Atomically create chunks for all sheets of a file.
+     *
+     * @return Collection<int, ExcelRowChunk>
      */
     public function createChunksForFile(ExcelFile $file): Collection
     {
         return DB::transaction(function () use ($file) {
-            $all = collect();
+            $allChunks = collect();
 
             foreach ($file->excelSheets as $sheet) {
-                $ids = ExcelRow::query()
+                $rowIds = ExcelRow::query()
                     ->where('excel_sheet_id', $sheet->getKey())
                     ->orderBy('id')
                     ->pluck('id');
 
-                if ($ids->isEmpty()) {
+                if ($rowIds->isEmpty()) {
                     continue;
                 }
 
-                $chunks = $ids->chunk($this->chunkSize)->map(function ($idChunk) use ($sheet) {
+                $chunks = $rowIds->chunk($this->chunkSize)->map(function ($idChunk) use ($sheet) {
                     return ExcelRowChunk::create([
                         'excel_sheet_id' => $sheet->getKey(),
-                        'from_row_id' => $idChunk->first(),
-                        'to_row_id' => $idChunk->last(),
-                        'size' => $idChunk->count(),
-                        'status' => 'pending',
+                        'from_row_id'    => $idChunk->first(),
+                        'to_row_id'      => $idChunk->last(),
+                        'size'           => $idChunk->count(),
+                        'status'         => ExcelChunkStatus::PENDING,
                     ]);
                 });
 
-                $all = $all->merge($chunks);
+                $allChunks = $allChunks->merge($chunks);
             }
 
-            Log::info('Chunks created', [
-                'file_id' => $file->getKey(),
-                'chunk_cnt' => $all->count(),
-                'chunk_sz' => $this->chunkSize,
+            $this->importLog(LogLevel::INFO, 'excel-importer::chunks_created', [
+                'file_id'    => $file->getKey(),
+                'chunk_count'  => $allChunks->count(),
+                'chunk_size'   => $this->chunkSize,
             ]);
 
-            return $all;
+            return $allChunks;
         }, 3);
     }
 
     public function allChunksProcessed(ExcelFile $file): bool
     {
-        $sheets = $file->relationLoaded('excelSheets') ? $file->excelSheets : $file->excelSheets()->get();
+        $sheets = $file->relationLoaded('excelSheets')
+            ? $file->excelSheets
+            : $file->excelSheets()->get();
 
         foreach ($sheets as $sheet) {
             if ((int) $sheet->chunk_count === 0) {
