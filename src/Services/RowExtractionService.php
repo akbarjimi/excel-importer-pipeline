@@ -1,31 +1,43 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Services;
 
 use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
+use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
+use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
+use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-class RowExtractionService
+final class RowExtractionService
 {
     use LogsImportActivity;
 
-    protected array $buffer = [];
-    protected int $inserted = 0;
-    protected int $batchSize;
+    private array $buffer = [];
+    private int $inserted = 0;
+    private int $batchSize;
+    private string $hashAlgo;
 
-    public function __construct(private readonly ExcelReaderDriver $driver)
-    {
-        $this->batchSize = config('excel-importer.insert_batch_size', 100);
+    public function __construct(
+        private readonly ExcelReaderDriver $driver,
+        private readonly ExcelFileRepository $fileRepo,
+        private readonly ExcelRowRepository $rowRepo,
+    ) {
+        $this->batchSize = (int) config('excel-importer.insert_batch_size', 100);
+        $this->hashAlgo = config('excel-importer.hash_algo', 'sha256');
     }
 
     public function extract(ExcelSheet $sheet): int
     {
         $this->inserted = 0;
-        $this->setFileStatus($sheet, ExcelFileStatus::READING);
+        $this->buffer = [];
+
+        $this->fileRepo->markAs($sheet->excel_file_id, ExcelFileStatus::READING);
 
         try {
             $this->driver->readRows(
@@ -37,28 +49,35 @@ class RowExtractionService
             $this->flushBuffer($sheet);
 
             $sheet->update(['rows_extracted_at' => now()]);
-            $this->setFileStatus($sheet, ExcelFileStatus::ROWS_EXTRACTED);
+            $this->fileRepo->markAs($sheet->excel_file_id, ExcelFileStatus::ROWS_EXTRACTED);
+
+            $this->importLog(LogLevel::INFO, 'excel-importer::extraction_success', [
+                'sheet_id' => $sheet->id,
+                'rows'     => $this->inserted,
+            ]);
 
             return $this->inserted;
         } catch (Throwable $e) {
-            $this->importLog('critical', 'Extraction failed', ['sheet_id' => $sheet->id, 'error' => $e->getMessage()]);
-            $this->setFileStatus($sheet, ExcelFileStatus::FAILED);
+            $this->fileRepo->markAs($sheet->excel_file_id, ExcelFileStatus::FAILED, ['error' => $e->getMessage()]);
+            $this->importLog(LogLevel::CRITICAL, 'excel-importer::extraction_failed', [
+                'sheet_id' => $sheet->id,
+                'error'    => $e->getMessage(),
+            ]);
             throw $e;
         }
     }
 
-    protected function bufferRow(array $row, ExcelSheet $sheet): void
+    private function bufferRow(array $row, ExcelSheet $sheet): void
     {
-        $encoded = json_encode($row, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        $hashAlgo = config('excel-importer.hash_algo', 'sha256');
+        $encoded = json_encode($row, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
         $this->buffer[] = [
             'excel_sheet_id' => $sheet->id,
-            'content' => $encoded,
-            'hash_algo' => $hashAlgo,
-            'content_hash' => hash($hashAlgo, $encoded),
-            'created_at' => now(),
-            'updated_at' => now(),
+            'content'        => $encoded,
+            'hash_algo'      => $this->hashAlgo,
+            'content_hash'   => hash($this->hashAlgo, $encoded),
+            'created_at'     => now(),
+            'updated_at'     => now(),
         ];
 
         if (count($this->buffer) >= $this->batchSize) {
@@ -66,22 +85,14 @@ class RowExtractionService
         }
     }
 
-    protected function flushBuffer(ExcelSheet $sheet): void
+    private function flushBuffer(ExcelSheet $sheet): void
     {
-        if (empty($this->buffer)) return;
+        if (empty($this->buffer)) {
+            return;
+        }
 
-        DB::table('excel_rows')->upsert(
-            $this->buffer,
-            ['excel_sheet_id', 'content_hash', 'hash_algo'],
-            ['updated_at']
-        );
-
+        $this->rowRepo->bulkUpsert($this->buffer);
         $this->inserted += count($this->buffer);
         $this->buffer = [];
-    }
-
-    protected function setFileStatus(ExcelSheet $sheet, ExcelFileStatus $status): void
-    {
-        $sheet->excelFile->update(['status' => $status->value]);
     }
 }
