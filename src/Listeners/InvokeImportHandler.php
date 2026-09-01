@@ -6,13 +6,14 @@ namespace Akbarjimi\ExcelImporter\Listeners;
 
 use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Contracts\ImportHandler;
+use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Events\FileProcessingCompleted;
 use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 
-final class InvokeImportConsumer implements ShouldQueue
+final class InvokeImportHandler implements ShouldQueueAfterCommit
 {
     use InteractsWithQueue;
     use LogsImportActivity;
@@ -22,11 +23,22 @@ final class InvokeImportConsumer implements ShouldQueue
         private readonly ExcelRowRepository $rowRepo,
     ) {}
 
+    public function viaQueue(): string
+    {
+        return config('excel-importer.queue', 'default');
+    }
+
+    public function tags(): array
+    {
+        return ['excel-handler', "file:{$this->event?->fileId}"];
+    }
+
     public function handle(FileProcessingCompleted $event): void
     {
         $handlerClass = $this->fileRepo->getHandler($event->fileId);
+
         if (!$handlerClass || !class_exists($handlerClass)) {
-            $this->importLog('warning', 'No handler found for file', ['file_id' => $event->fileId]);
+            $this->importLog(LogLevel::WARNING, 'excel-importer::handler_not_found', ['file_id' => $event->fileId]);
             return;
         }
 
@@ -37,6 +49,6 @@ final class InvokeImportConsumer implements ShouldQueue
 
         $handler->handle($event->fileId, $rows);
 
-        $this->logActivity('handler_invoked', ['file_id' => $event->fileId]);
+        $this->importLog(LogLevel::INFO, 'excel-importer::handler_invoked', ['file_id' => $event->fileId]);
     }
 }
