@@ -69,4 +69,21 @@ final class ExcelFileRepository
             ->withProperties(['error' => $exception->getMessage()])
             ->log('import_batch_failed');
     }
+
+    public function canTransition(int $fileId, ExcelFileStatus $newStatus): bool
+    {
+        $file = ExcelFile::find($fileId);
+        if (!$file) {
+            return false;
+        }
+        $allowed = [
+            ExcelFileStatus::PENDING->value => [ExcelFileStatus::READING],
+            ExcelFileStatus::READING->value => [ExcelFileStatus::ROWS_EXTRACTED, ExcelFileStatus::FAILED],
+            ExcelFileStatus::ROWS_EXTRACTED->value => [ExcelFileStatus::PROCESSING, ExcelFileStatus::FAILED],
+            ExcelFileStatus::PROCESSING->value => [ExcelFileStatus::COMPLETED, ExcelFileStatus::FAILED],
+            ExcelFileStatus::FAILED->value => [], // terminal
+            ExcelFileStatus::COMPLETED->value => [], // terminal
+        ];
+        return in_array($newStatus->value, $allowed[$file->status->value] ?? []);
+    }
 }
