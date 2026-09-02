@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 return [
     'file' => [
+        'file_deleted' => 'File :file_id has been deleted. Skipping further processing.',
         'not_found' => 'Excel file [:path] not found on disk [:disk].',
         'handler_missing' => 'No handler set for import. Call withHandler() before dispatch().',
         'processing_completed' => 'File processing completed for file :file_id.',
