@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\DTOs;
 
-final readonly class SheetInfo
+final class SheetInfo
 {
     public function __construct(
-        public string $name,
-        public int    $index,
-        public int    $totalRows,
-        public int    $totalColumns,
-        public array  $raw = [],
+        public readonly string $name,
+        public readonly int    $index,
+        public readonly int    $totalRows,
+        public readonly int    $totalColumns,
+        public readonly array  $raw = [],
     )
     {
     }
