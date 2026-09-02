@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Events;
 
-final readonly class SheetProcessingCompleted
+final class SheetProcessingCompleted
 {
-    public function __construct(
-        public int $sheetId,
-    ) {}
+    public function __construct(public readonly int $sheetId) {}
 }
