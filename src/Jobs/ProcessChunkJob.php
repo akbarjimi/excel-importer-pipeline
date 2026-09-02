@@ -56,6 +56,13 @@ final class ProcessChunkJob implements ShouldQueue
         $chunk = ExcelRowChunk::findOrFail($this->chunkId);
         $sheet = ExcelSheet::findOrFail($chunk->excel_sheet_id);
 
+        $file = $sheet->excelFile;
+        if ($file->trashed()) {
+            // If file is deleted, mark chunk as failed and exit.
+            $chunk->update(['status' => ExcelChunkStatus::FAILED, 'error' => 'File deleted.']);
+            return;
+        }
+
         if ($chunk->status === ExcelChunkStatus::COMPLETED) {
             return;
         }
