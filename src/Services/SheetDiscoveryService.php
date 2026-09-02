@@ -9,8 +9,6 @@ use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Filesystem\Filesystem;
-use Illuminate\Support\Facades\Storage;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use RuntimeException;
 
 
@@ -54,8 +52,7 @@ final class SheetDiscoveryService
         // Remote disk: stream down to a temp file, preserving the extension so
         // IOFactory::createReaderForFile() can still detect the correct reader.
         $extension = pathinfo($path, PATHINFO_EXTENSION);
-        $base = tempnam(sys_get_temp_dir(), 'excel_')
-            ?: throw new RuntimeException('Unable to allocate a temporary file.');
+        $base = tempnam(sys_get_temp_dir(), 'excel_') ?: throw new RuntimeException('Unable to allocate temp file.');
         $temp = $extension !== '' ? "{$base}.{$extension}" : $base;
 
         if ($temp !== $base) {
