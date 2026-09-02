@@ -11,37 +11,37 @@ use Throwable;
 
 final class ExcelFileRepository
 {
+    public function findFile(int $fileId, array $relations = []): ?ExcelFile
+    {
+        return ExcelFile::query()->with($relations)->find($fileId);
+    }
 
     public function create(array $data): ExcelFile
     {
         return ExcelFile::create($data);
     }
 
-    /**
-     * @param array<int, string> $relations
-     */
-    public function findFile(int $fileId, array $relations = []): ?ExcelFile
+    public function transitionTo(int $fileId, ExcelFileStatus $newStatus, array $extra = []): void
     {
-        return ExcelFile::query()->with($relations)->find($fileId);
-    }
+        $file = ExcelFile::findOrFail($fileId);
+        if (!$file->status->canTransitionTo($newStatus)) {
+            throw new \RuntimeException(
+                "Invalid status transition from {$file->status->value} to {$newStatus->value}"
+            );
+        }
 
-    /**
-     * Generic status update.
-     */
-    public function markAs(int $fileId, ExcelFileStatus $status, array $extra = []): void
-    {
-        $data = ['status' => $status->value] + $extra;
-        ExcelFile::query()->whereKey($fileId)->update($data);
+        $data = ['status' => $newStatus->value] + $extra;
+        $file->update($data);
     }
 
     public function markAsReading(int $fileId): void
     {
-        $this->markAs($fileId, ExcelFileStatus::READING);
+        $this->transitionTo($fileId, ExcelFileStatus::READING);
     }
 
     public function markAsRowsExtracted(int $fileId): void
     {
-        $this->markAs($fileId, ExcelFileStatus::ROWS_EXTRACTED, ['rows_extracted_at' => now()]);
+        $this->transitionTo($fileId, ExcelFileStatus::ROWS_EXTRACTED, ['rows_extracted_at' => now()]);
     }
 
     public function markAsFailed(int $fileId, ?string $reason = null): void
@@ -50,22 +50,27 @@ final class ExcelFileRepository
         if ($reason !== null) {
             $extra['error'] = $reason;
         }
-        $this->markAs($fileId, ExcelFileStatus::FAILED, $extra);
+        $this->transitionTo($fileId, ExcelFileStatus::FAILED, $extra);
     }
 
     public function markAsProcessing(int $fileId): void
     {
-        $this->markAs($fileId, ExcelFileStatus::PROCESSING);
+        $this->transitionTo($fileId, ExcelFileStatus::PROCESSING);
     }
 
     public function markAsCompleted(int $fileId): void
     {
-        $this->markAs($fileId, ExcelFileStatus::COMPLETED, ['completed_at' => now()]);
+        $this->transitionTo($fileId, ExcelFileStatus::COMPLETED, ['completed_at' => now()]);
     }
 
     public function getHandler(int $fileId): ?string
     {
-        return ExcelFile::query()->whereKey($fileId)->value('meta->handler');
+        return ExcelFile::whereKey($fileId)->value('meta->handler');
+    }
+
+    public function recordBatchId(int $fileId, string $batchId): void
+    {
+        ExcelFile::whereKey($fileId)->update(['batch_id' => $batchId]);
     }
 
     public function logBatchFailure(int $fileId, Throwable $exception): void
@@ -74,22 +79,5 @@ final class ExcelFileRepository
             ->performedOn(ExcelFile::find($fileId))
             ->withProperties(['error' => $exception->getMessage()])
             ->log('import_batch_failed');
-    }
-
-    public function canTransition(int $fileId, ExcelFileStatus $newStatus): bool
-    {
-        $file = ExcelFile::find($fileId);
-        if (!$file) {
-            return false;
-        }
-        $allowed = [
-            ExcelFileStatus::PENDING->value => [ExcelFileStatus::READING],
-            ExcelFileStatus::READING->value => [ExcelFileStatus::ROWS_EXTRACTED, ExcelFileStatus::FAILED],
-            ExcelFileStatus::ROWS_EXTRACTED->value => [ExcelFileStatus::PROCESSING, ExcelFileStatus::FAILED],
-            ExcelFileStatus::PROCESSING->value => [ExcelFileStatus::COMPLETED, ExcelFileStatus::FAILED],
-            ExcelFileStatus::FAILED->value => [], // terminal
-            ExcelFileStatus::COMPLETED->value => [], // terminal
-        ];
-        return in_array($newStatus->value, $allowed[$file->status->value] ?? []);
     }
 }
