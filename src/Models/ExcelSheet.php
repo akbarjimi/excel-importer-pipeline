@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class ExcelSheet extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $fillable = [
         'excel_file_id',
@@ -38,7 +40,7 @@ final class ExcelSheet extends Model
 
     public function excelFile(): BelongsTo
     {
-        return $this->belongsTo(ExcelFile::class);
+        return $this->belongsTo(ExcelFile::class)->withTrashed();
     }
 
     public function excelRows(): HasMany
