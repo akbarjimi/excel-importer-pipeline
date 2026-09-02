@@ -11,7 +11,6 @@ use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
-use Illuminate\Support\Facades\DB;
 use Throwable;
 
 final class RowExtractionService
@@ -34,37 +33,43 @@ final class RowExtractionService
 
     public function extract(ExcelSheet $sheet): int
     {
-        $this->inserted = 0;
-        $this->buffer = [];
+        $this->reset();
 
-        $this->fileRepo->markAs($sheet->excel_file_id, ExcelFileStatus::READING);
+        // Mark file as reading
+        $this->fileRepo->markAsReading($sheet->excel_file_id);
 
         try {
             $this->driver->readRows(
                 $sheet->excelFile->path,
-                $sheet->index,
+                $sheet->sheet_index,
                 fn(array $row) => $this->bufferRow($row, $sheet)
             );
 
             $this->flushBuffer($sheet);
 
             $sheet->update(['rows_extracted_at' => now()]);
-            $this->fileRepo->markAs($sheet->excel_file_id, ExcelFileStatus::ROWS_EXTRACTED);
+            $this->fileRepo->markAsRowsExtracted($sheet->excel_file_id);
 
             $this->importLog(LogLevel::INFO, 'excel-importer::extraction_success', [
                 'sheet_id' => $sheet->id,
-                'rows'     => $this->inserted,
+                'rows' => $this->inserted,
             ]);
 
             return $this->inserted;
         } catch (Throwable $e) {
-            $this->fileRepo->markAs($sheet->excel_file_id, ExcelFileStatus::FAILED, ['error' => $e->getMessage()]);
+            $this->fileRepo->markAsFailed($sheet->excel_file_id, $e->getMessage());
             $this->importLog(LogLevel::CRITICAL, 'excel-importer::extraction_failed', [
                 'sheet_id' => $sheet->id,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
+    }
+
+    private function reset(): void
+    {
+        $this->inserted = 0;
+        $this->buffer = [];
     }
 
     private function bufferRow(array $row, ExcelSheet $sheet): void
@@ -73,11 +78,11 @@ final class RowExtractionService
 
         $this->buffer[] = [
             'excel_sheet_id' => $sheet->id,
-            'content'        => $encoded,
-            'hash_algo'      => $this->hashAlgo,
-            'content_hash'   => hash($this->hashAlgo, $encoded),
-            'created_at'     => now(),
-            'updated_at'     => now(),
+            'content' => $encoded,
+            'hash_algo' => $this->hashAlgo,
+            'content_hash' => hash($this->hashAlgo, $encoded),
+            'created_at' => now(),
+            'updated_at' => now(),
         ];
 
         if (count($this->buffer) >= $this->batchSize) {
