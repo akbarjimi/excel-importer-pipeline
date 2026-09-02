@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Models;
 
 use Akbarjimi\ExcelImporter\Database\Factories\ExcelSheetFactory;
@@ -9,30 +11,37 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ExcelSheet extends Model
+final class ExcelSheet extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'excel_file_id',
         'name',
-        'rows_count',
+        'sheet_index',
+        'total_rows',
+        'chunk_count',
+        'processed_chunks',
+        'status',
         'meta',
         'rows_extracted_at',
     ];
 
     protected $casts = [
+        'status' => ExcelSheetStatus::class,
         'meta' => 'array',
         'rows_extracted_at' => 'datetime',
-        'status' => ExcelSheetStatus::class,
+        'total_rows' => 'integer',
+        'chunk_count' => 'integer',
+        'processed_chunks' => 'integer',
     ];
 
     public function excelFile(): BelongsTo
     {
-        return $this->belongsTo(ExcelFile::class, 'excel_file_id');
+        return $this->belongsTo(ExcelFile::class);
     }
 
-    public function excelRow(): HasMany
+    public function excelRows(): HasMany
     {
         return $this->hasMany(ExcelRow::class);
     }
