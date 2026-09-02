@@ -11,6 +11,12 @@ use Throwable;
 
 final class ExcelFileRepository
 {
+
+    public function create(array $data): ExcelFile
+    {
+        return ExcelFile::create($data);
+    }
+
     /**
      * @param array<int, string> $relations
      */

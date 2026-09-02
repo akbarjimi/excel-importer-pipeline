@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Akbarjimi\ExcelImporter\Services;
 
 use Akbarjimi\ExcelImporter\Contracts\ImportHandler;
-use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
-use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Exceptions\ImportFileNotFoundException;
 use Akbarjimi\ExcelImporter\Exceptions\MissingHandlerException;
-use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Support\Facades\DB;
 
@@ -19,10 +17,13 @@ final class PendingImport
     private array $meta = [];
 
     public function __construct(
-        private readonly string $path,
-        private readonly string $disk,
-        private readonly FilesystemFactory $storageFactory,
-    ) {}
+        private readonly string              $path,
+        private readonly string              $disk,
+        private readonly FilesystemFactory   $storageFactory,
+        private readonly ExcelFileRepository $fileRepo,
+    )
+    {
+    }
 
     public function withHandler(string $handlerClass): self
     {
@@ -44,10 +45,6 @@ final class PendingImport
         return $this;
     }
 
-    /**
-     * @throws ImportFileNotFoundException
-     * @throws MissingHandlerException
-     */
     public function dispatch(): ExcelFile
     {
         if (!isset($this->handler)) {
@@ -61,17 +58,15 @@ final class PendingImport
         }
 
         return DB::transaction(function () use ($storage) {
-            $file = ExcelFile::query()->create([
+            $data = [
                 'file_name' => basename($this->path),
-                'path'      => $this->path,
-                'disk'      => $this->disk,
-                'size'      => $storage->size($this->path),
-                'status'    => ExcelFileStatus::PENDING,
-                'meta'      => array_merge(
-                    $this->meta,
-                    ['handler' => $this->handler]
-                ),
-            ]);
+                'path' => $this->path,
+                'disk' => $this->disk,
+                'size' => $storage->size($this->path),
+                'meta' => array_merge($this->meta, ['handler' => $this->handler]),
+            ];
+
+            $file = $this->fileRepo->create($data);
 
             ExcelFileRegistered::dispatch($file->id);
 
