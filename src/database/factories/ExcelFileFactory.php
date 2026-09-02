@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Database\Factories;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
@@ -16,8 +18,12 @@ class ExcelFileFactory extends Factory
             'file_name' => $this->faker->word() . '.xlsx',
             'path' => 'testing/' . $this->faker->uuid() . '.xlsx',
             'disk' => 'local',
-            'size' => $this->faker->numberBetween(1024, 10485760), // 1KB to 10MB
+            'size' => $this->faker->numberBetween(1024, 10485760),
             'status' => ExcelFileStatus::PENDING,
+            'meta' => [],
+            'completed_at' => null,
+            'error' => null,
+            'batch_id' => null,
         ];
     }
 }
