@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Akbarjimi\ExcelImporter\Exceptions;
+namespace Akbarjimi\ExcelImporter\Exceptions\Sheet;
 
-use RuntimeException;
+use Akbarjimi\ExcelImporter\Exceptions\ImportException;
 
-final class EmptySheetException extends RuntimeException
+final class EmptySheetException extends ImportException
 {
     public static function forFile(int $fileId): self
     {

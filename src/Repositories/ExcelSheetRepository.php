@@ -6,7 +6,7 @@ namespace Akbarjimi\ExcelImporter\Repositories;
 
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
-use Akbarjimi\ExcelImporter\Exceptions\EmptySheetException;
+use Akbarjimi\ExcelImporter\Exceptions\Sheet\EmptySheetException;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
