@@ -45,7 +45,10 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
     public function handle(AllRowsExtracted $event): void
     {
         $file = $this->fileRepo->findFile($event->fileId, ['excelSheets']);
-
+        if (!$file || $file->trashed()) {
+            $this->importLog(LogLevel::WARNING, 'excel-importer::file_deleted', ['file_id' => $event->fileId]);
+            return;
+        }
         if ($file === null) {
             $this->importLog(LogLevel::WARNING, 'excel-importer::file_not_found', ['file_id' => $event->fileId]);
             return;
