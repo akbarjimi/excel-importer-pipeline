@@ -6,7 +6,6 @@ namespace Akbarjimi\ExcelImporter\Drivers;
 
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
-use Akbarjimi\ExcelImporter\Exceptions\SheetNotFoundException;
 use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Common\Exception\IOException;
 
@@ -15,7 +14,7 @@ final class OpenSpoutDriver implements ExcelReaderDriver
     public function readRows(string $filePath, int $sheetIndex, callable $callback): void
     {
         if (!is_file($filePath)) {
-            throw new \InvalidArgumentException("Excel file not found at [{$filePath}].");
+            throw new \InvalidArgumentException("File not found: {$filePath}");
         }
 
         $reader = new Reader();
@@ -34,7 +33,7 @@ final class OpenSpoutDriver implements ExcelReaderDriver
                 return;
             }
 
-            throw new SheetNotFoundException("Sheet index [{$sheetIndex}] does not exist in [{$filePath}].");
+            throw new \RuntimeException("Sheet index {$sheetIndex} not found.");
         } finally {
             $reader->close();
         }
@@ -43,7 +42,7 @@ final class OpenSpoutDriver implements ExcelReaderDriver
     public function listSheets(string $filePath): array
     {
         if (!is_file($filePath)) {
-            throw new \InvalidArgumentException("Excel file not found at [{$filePath}].");
+            throw new \InvalidArgumentException("File not found: {$filePath}");
         }
 
         $reader = new Reader();
@@ -55,23 +54,19 @@ final class OpenSpoutDriver implements ExcelReaderDriver
                 name: $sheet->getName(),
                 index: $index,
                 totalRows: $sheet->getRowCount(),
-                totalColumns: 0, // OpenSpout doesn't provide column count easily
-                raw: ['name' => $sheet->getName()]
+                totalColumns: 0,
+                raw: ['name' => $sheet->getName()],
             );
         }
 
         $reader->close();
-
         return $sheets;
     }
 
     private function normaliseRow(array $cells): array
     {
         return array_map(function ($value) {
-            if ($value instanceof \DateTimeInterface) {
-                return $value->format('Y-m-d H:i:s');
-            }
-            return $value;
+            return $value instanceof \DateTimeInterface ? $value->format('Y-m-d H:i:s') : $value;
         }, $cells);
     }
 }
