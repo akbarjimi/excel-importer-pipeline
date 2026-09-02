@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Database\Factories;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
@@ -15,29 +17,20 @@ class ExcelSheetFactory extends Factory
     {
         return [
             'excel_file_id' => ExcelFile::factory(),
-
             'name' => $this->faker->word(),
-
-            'status' => $this->faker->randomElement(ExcelSheetStatus::cases())->value,
-
-            'rows_count' => $this->faker->optional()->numberBetween(1, 1000),
-
-            'rows_extracted_at' => $this->faker->optional()->dateTimeBetween('-1 week', 'now'),
-
-            'chunk_count' => $this->faker->optional()->numberBetween(1, 20),
-
-            'meta' => $this->faker->optional()->passthrough(json_encode([
-                'source' => 'importer',
-                'version' => $this->faker->randomFloat(1, 1.0, 2.0),
-            ])),
-
-            'exception' => $this->faker->optional()->realText(100),
+            'sheet_index' => 0,
+            'total_rows' => $this->faker->numberBetween(1, 10000),
+            'chunk_count' => 0,
+            'processed_chunks' => 0,
+            'status' => ExcelSheetStatus::PENDING->value,
+            'meta' => [],
+            'rows_extracted_at' => null,
         ];
     }
 
     public function pending(): static
     {
-        return $this->state(fn () => [
+        return $this->state([
             'status' => ExcelSheetStatus::PENDING->value,
             'rows_extracted_at' => null,
         ]);
@@ -45,7 +38,7 @@ class ExcelSheetFactory extends Factory
 
     public function extracted(): static
     {
-        return $this->state(fn () => [
+        return $this->state([
             'status' => ExcelSheetStatus::EXTRACTED->value,
             'rows_extracted_at' => now(),
         ]);
@@ -53,23 +46,17 @@ class ExcelSheetFactory extends Factory
 
     public function failed(?string $exception = null): static
     {
-        return $this->state(fn () => [
+        return $this->state([
             'status' => ExcelSheetStatus::FAILED->value,
-            'exception' => $exception ?? 'Unhandled exception during extraction.',
-        ]);
-    }
-
-    public function withRowsCount(int $count): static
-    {
-        return $this->state(fn () => [
-            'rows_count' => $count,
+            'meta' => array_merge($this->meta ?? [], ['exception' => $exception ?? 'Unhandled exception']),
         ]);
     }
 
     public function withChunks(int $chunks): static
     {
-        return $this->state(fn () => [
+        return $this->state([
             'chunk_count' => $chunks,
+            'processed_chunks' => 0,
         ]);
     }
 }
