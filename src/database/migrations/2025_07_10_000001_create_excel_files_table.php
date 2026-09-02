@@ -17,15 +17,13 @@ return new class extends Migration {
             $table->string('path');
             $table->string('disk');
             $table->unsignedBigInteger('size');
-
             $table->string('status', 32)->default(ExcelFileStatus::PENDING->value)->index();
-
             $table->json('meta')->nullable();
-
             $table->timestamp('completed_at')->nullable();
             $table->text('error')->nullable();
             $table->string('batch_id')->nullable()->index();
 
+            $table->softDeletes();
             $table->timestamps();
         });
     }
