@@ -13,10 +13,6 @@ use Illuminate\Support\Facades\DB;
 
 final class ExcelSheetRepository
 {
-    /**
-     * @param array<int, SheetInfo> $sheets
-     * @throws EmptySheetException
-     */
     public function bulkCreate(int $fileId, array $sheets): void
     {
         if (empty($sheets)) {
@@ -48,9 +44,6 @@ final class ExcelSheetRepository
         return ExcelSheet::query()->where('excel_file_id', $fileId)->exists();
     }
 
-    /**
-     * @return Collection<int, ExcelSheet>
-     */
     public function getByFileId(int $fileId): Collection
     {
         return ExcelSheet::query()
@@ -64,6 +57,17 @@ final class ExcelSheetRepository
         return ExcelSheet::find($sheetId);
     }
 
+    public function transitionTo(int $sheetId, ExcelSheetStatus $newStatus): void
+    {
+        $sheet = ExcelSheet::findOrFail($sheetId);
+        if (!$sheet->status->canTransitionTo($newStatus)) {
+            throw new \RuntimeException(
+                "Invalid transition from {$sheet->status->value} to {$newStatus->value}"
+            );
+        }
+        $sheet->update(['status' => $newStatus->value]);
+    }
+
     public function incrementProcessedChunks(int $sheetId): int
     {
         return ExcelSheet::query()
@@ -75,18 +79,5 @@ final class ExcelSheetRepository
     public function setChunkCount(int $sheetId, int $count): void
     {
         ExcelSheet::query()->where('id', $sheetId)->update(['chunk_count' => $count]);
-    }
-
-    public function markAsCompleted(int $sheetId): void
-    {
-        ExcelSheet::query()->where('id', $sheetId)->update(['status' => ExcelSheetStatus::COMPLETED->value]);
-    }
-
-    public function markAsFailed(int $sheetId, string $reason): void
-    {
-        ExcelSheet::query()->where('id', $sheetId)->update([
-            'status' => ExcelSheetStatus::FAILED->value,
-            'meta' => DB::raw("JSON_SET(meta, '$.error', '{$reason}')"),
-        ]);
     }
 }
