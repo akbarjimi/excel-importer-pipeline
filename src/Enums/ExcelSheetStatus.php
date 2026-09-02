@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Enums;
 
 enum ExcelSheetStatus: string
 {
-    case PENDING = 'pending';                       // Sheet discovered, no action yet
-    case EXTRACTING = 'extracting';                 // Sheet being parsed
-    case EXTRACTED = 'extracted';                   // Rows extracted
-    case CHUNKS_DISPATCHED = 'chunks_dispatched';   // Ready for chunked processing
-    case COMPLETED = 'completed';                   // All rows processed
-    case FAILED = 'failed';                         // Sheet processing failed
+    case PENDING = 'pending';               // Discovered but not yet processed
+    case EXTRACTING = 'extracting';         // Row extraction in progress
+    case EXTRACTED = 'extracted';           // All rows extracted
+    case CHUNKS_DISPATCHED = 'chunks_dispatched'; // Chunks sent to queue
+    case COMPLETED = 'completed';           // All chunks processed successfully
+    case FAILED = 'failed';                 // Failed at any stage
 }
