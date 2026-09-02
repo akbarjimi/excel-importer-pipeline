@@ -1,16 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Enums;
 
 enum ExcelRowStatus: string
 {
-    case PENDING = 'pending';                               // Awaiting validation/processing
-    case VALIDATING = 'validating';                         // In validation phase
-    case FAILED_VALIDATION = 'failed_validation';           // Didn't pass validation
-    case TRANSFORMING = 'transforming';                     // Being transformed or normalized
-    case FAILED_TRANSFORMATION = 'failed_transformation';   // Transformation error
-    case PROCESSED = 'processed';                           // Row handled successfully
-    case MAPPED = 'mapped';
-
+    case PENDING = 'pending';
+    case VALIDATING = 'validating';
     case VALIDATED = 'validated';
+    case FAILED_VALIDATION = 'failed_validation';
+    case PROCESSED = 'processed';
+    case FAILED = 'failed';
+
+    public function canTransitionTo(self $new): bool
+    {
+        return match ($this) {
+            self::PENDING => in_array($new, [self::VALIDATING, self::FAILED]),
+            self::VALIDATING => in_array($new, [self::VALIDATED, self::FAILED_VALIDATION, self::FAILED]),
+            self::VALIDATED => in_array($new, [self::PROCESSED, self::FAILED]),
+            self::FAILED_VALIDATION, self::PROCESSED, self::FAILED => false,
+        };
+    }
 }
