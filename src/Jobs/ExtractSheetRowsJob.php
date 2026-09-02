@@ -15,7 +15,10 @@ use Illuminate\Queue\Middleware\SkipIfBatchCancelled;
 
 final class ExtractSheetRowsJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable;
+    use Batchable;
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
 
     public int $tries = 3;
     public int $backoff = 10;
@@ -37,6 +40,12 @@ final class ExtractSheetRowsJob implements ShouldQueue
         ExcelSheetRepository $sheetRepo,
     ): void {
         $sheet = $sheetRepo->getById($this->sheetId);
+
+        // If sheet is soft-deleted or missing, skip.
+        if (!$sheet || $sheet->trashed()) {
+            return;
+        }
+
         $extraction->extract($sheet);
     }
 }
