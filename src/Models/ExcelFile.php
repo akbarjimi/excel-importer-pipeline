@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Models;
 
 use Akbarjimi\ExcelImporter\Database\Factories\ExcelFileFactory;
@@ -7,7 +9,6 @@ use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
 
 final class ExcelFile extends Model
 {
@@ -19,11 +20,17 @@ final class ExcelFile extends Model
         'disk',
         'size',
         'status',
+        'meta',
+        'completed_at',
+        'error',
+        'batch_id',
     ];
 
     protected $casts = [
         'status' => ExcelFileStatus::class,
         'size' => 'integer',
+        'meta' => 'array',
+        'completed_at' => 'datetime',
     ];
 
     public function excelSheets(): HasMany
