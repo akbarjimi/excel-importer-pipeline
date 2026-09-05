@@ -19,7 +19,7 @@ it('stores metadata and dispatches ExcelUploaded', function () {
 
     $file = app(ImportManager::class)
         ->import($path)
-        ->withHandler($handler)
+        ->withHandler($handler::class)
         ->dispatch();
 
     expect($file)->toBeInstanceOf(ExcelFile::class)
