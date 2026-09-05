@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Exceptions;
 
-use RuntimeException;
-
-final class ImportFileNotFoundException extends RuntimeException
+final class ImportFileNotFoundException extends ImportException
 {
     public static function make(string $disk, string $path): self
     {
