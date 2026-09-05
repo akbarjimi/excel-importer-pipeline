@@ -29,6 +29,7 @@ return new class extends Migration {
             $table->unique(['excel_file_id', 'sheet_index']);
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
