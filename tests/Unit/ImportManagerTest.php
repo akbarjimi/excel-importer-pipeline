@@ -1,5 +1,6 @@
 <?php
 
+use Akbarjimi\ExcelImporter\Contracts\ImportHandler;
 use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Services\ImportManager;
@@ -12,7 +13,14 @@ it('stores metadata and dispatches ExcelUploaded', function () {
     $path = 'imports/sample.xlsx';
     Storage::put($path, 'stub');
 
-    $file = app(ImportManager::class)->import($path);
+    $handler = new class implements ImportHandler {
+        public function handle(int $fileId, iterable $rows): void {}
+    };
+
+    $file = app(ImportManager::class)
+        ->import($path)
+        ->withHandler($handler)
+        ->dispatch();
 
     expect($file)->toBeInstanceOf(ExcelFile::class)
         ->and($file->file_name)->toBe('sample.xlsx');
