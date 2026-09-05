@@ -18,12 +18,12 @@ it('stores metadata and dispatches ExcelUploaded', function () {
     };
 
     $file = app(ImportManager::class)
-        ->import($path)
-        ->withHandler($handler::class)
-        ->dispatch();
+            ->import($path)
+            ->withHandler($handler::class)
+            ->dispatch();
 
     expect($file)->toBeInstanceOf(ExcelFile::class)
-        ->and($file->file_name)->toBe('sample.xlsx');
+            ->and($file->file_name)->toBe('sample.xlsx');
 
     Event::assertDispatched(ExcelFileRegistered::class);
 });
