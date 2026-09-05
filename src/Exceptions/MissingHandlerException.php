@@ -8,6 +8,6 @@ final class MissingHandlerException extends ImportException
 {
     public static function make(): self
     {
-        return new self(trans('excel-importer::handler_missing'));
+        return new self(trans('excel-importer::file.handler_missing'));
     }
 }

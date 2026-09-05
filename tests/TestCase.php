@@ -27,7 +27,7 @@ abstract class TestCase extends Orchestra
         Bus::fake();
         Queue::fake();
 
-        $this->app->loadTranslationsFrom(__DIR__ . '/../lang', 'excel-importer');
+        $this->app['translator']->addNamespace('excel-importer', __DIR__ . '/../lang');
         $this->app->setLocale('en');
     }
 
