@@ -26,6 +26,9 @@ abstract class TestCase extends Orchestra
         Event::fake();
         Bus::fake();
         Queue::fake();
+
+        $this->app->loadTranslationsFrom(__DIR__ . '/../lang', 'excel-importer');
+        $this->app->setLocale('en');
     }
 
     /**
