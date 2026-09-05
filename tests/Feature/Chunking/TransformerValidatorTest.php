@@ -9,9 +9,7 @@ it('applies transformer correctly', function () {
     $rowContent = ['A1' => 'hello', 'B1' => '123'];
 
     $transform = app(TransformService::class);
-    $transform->load($sheet);
-
-    $transformed = $transform->apply($rowContent);
+    $transformed = $transform->apply($rowContent, $sheet); // remove load(), pass sheet directly
 
     expect($transformed['A1'])->toBe('HELLO');
     expect($transformed['B1'])->toBe('123');
@@ -22,9 +20,7 @@ it('applies validator correctly for valid rows', function () {
     $validRow = ['A1' => 'HELLO', 'B1' => 'john.doe@mail.com', 'C1' => 31];
 
     $validate = app(ValidateService::class);
-    $validate->load($sheet);
-
-    $errorsValid = $validate->apply($validRow);
+    $errorsValid = $validate->apply($validRow, $sheet); // remove load()
 
     expect($errorsValid)->toBeEmpty();
 });
@@ -34,9 +30,7 @@ it('applies validator correctly for invalid rows', function () {
     $invalidRow = ['A1' => '', 'B1' => 'john.doe@mail.com', 'C1' => '30'];
 
     $validate = app(ValidateService::class);
-    $validate->load($sheet);
-
-    $errorsInvalid = $validate->apply($invalidRow);
+    $errorsInvalid = $validate->apply($invalidRow, $sheet); // remove load()
 
     expect($errorsInvalid)->not()->toBeEmpty();
     expect($errorsInvalid)->toHaveKeys(['A1', 'C1']);
