@@ -68,7 +68,8 @@ final class ExcelFileRepository
 
     public function getHandler(int $fileId): ?string
     {
-        return ExcelFile::whereKey($fileId)->value('meta->handler');
+        $file = ExcelFile::find($fileId);
+        return $file ? ($file->meta['handler'] ?? null) : null;
     }
 
     public function recordBatchId(int $fileId, string $batchId): void
