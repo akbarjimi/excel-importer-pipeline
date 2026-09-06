@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Akbarjimi\ExcelImporter\Services;
 
 use Akbarjimi\ExcelImporter\Contracts\ImportHandler;
+use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Exceptions\ImportFileNotFoundException;
 use Akbarjimi\ExcelImporter\Exceptions\MissingHandlerException;
@@ -66,6 +67,7 @@ final class PendingImport
                 'disk' => $this->disk,
                 'size' => $storage->size($this->path),
                 'meta' => array_merge($this->meta, ['handler' => $this->handler]),
+                'status' => ExcelFileStatus::PENDING
             ];
 
             $file = $this->fileRepo->create($data);

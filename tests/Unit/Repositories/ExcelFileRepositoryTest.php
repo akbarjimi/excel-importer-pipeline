@@ -6,8 +6,8 @@ namespace Akbarjimi\ExcelImporter\Tests\Unit\Repositories;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
-use Akbarjimi\ExcelImporter\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -30,6 +30,7 @@ describe('ExcelFileRepository', function () {
             'disk' => 'local',
             'size' => 1024,
             'meta' => ['handler' => 'App\\Handlers\\TestHandler'],
+            'status' => ExcelFileStatus::PENDING
         ];
 
         $file = $this->repo->create($data);
@@ -43,7 +44,10 @@ describe('ExcelFileRepository', function () {
     });
 
     it('finds a file by ID with optional relations', function () {
-        $file = ExcelFile::factory()->hasExcelSheets(2)->create();
+        $file = ExcelFile::factory()
+            ->has(ExcelSheet::factory()->state(['sheet_index' => 0]), 'excelSheets')
+            ->has(ExcelSheet::factory()->state(['sheet_index' => 1]), 'excelSheets')
+            ->create();
 
         $found = $this->repo->findFile($file->id, ['excelSheets']);
 
