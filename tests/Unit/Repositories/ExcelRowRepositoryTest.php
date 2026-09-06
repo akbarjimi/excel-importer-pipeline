@@ -64,7 +64,6 @@ describe('ExcelRowRepository', function () {
     });
 
     it('bulk upserts rows (updates existing, inserts new)', function () {
-        // Create an existing row.
         $existing = ExcelRow::factory()->for($this->sheet)->create([
             'content' => json_encode(['name' => 'John']),
             'content_hash' => hash('sha256', json_encode(['name' => 'John'])),
@@ -78,8 +77,8 @@ describe('ExcelRowRepository', function () {
                 'id' => $existing->id,
                 'excel_sheet_id' => $this->sheet->id,
                 'content' => json_encode(['name' => 'John Updated']),
-                'content_hash' => hash('sha256', json_encode(['name' => 'John Updated'])),
-                'hash_algo' => 'sha256',
+                'content_hash' => $existing->content_hash,
+                'hash_algo' => $existing->hash_algo,
                 'status' => ExcelRowStatus::VALIDATED,
                 'row_index' => 1,
                 'updated_at' => now(),
@@ -102,6 +101,7 @@ describe('ExcelRowRepository', function () {
             'id' => $existing->id,
             'content' => json_encode(['name' => 'John Updated']),
             'status' => ExcelRowStatus::VALIDATED->value,
+            'content_hash' => $existing->content_hash,
         ]);
         $this->assertDatabaseHas('excel_rows', [
             'content' => json_encode(['name' => 'New']),
