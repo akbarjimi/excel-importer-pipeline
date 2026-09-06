@@ -142,15 +142,4 @@ describe('ExcelFileRepository', function () {
 
         expect($file->refresh()->batch_id)->toBe('batch-123');
     });
-
-    it('logs batch failure without throwing errors', function () {
-        $file = ExcelFile::factory()->create();
-        $exception = new \Exception('Test failure');
-
-        // Should not throw.
-        $this->repo->logBatchFailure($file->id, $exception);
-
-        // We can't easily assert activity was called without mocking, but we ensure no exception.
-        expect(true)->toBeTrue();
-    });
 });

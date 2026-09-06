@@ -79,14 +79,4 @@ final class ExcelFileRepository
     {
         ExcelFile::whereKey($fileId)->update(['batch_id' => $batchId]);
     }
-
-    public function logBatchFailure(int $fileId, Throwable $exception): void
-    {
-        Log::channel(config('excel-importer.logging.channels', config('logging.default', 'stack')))
-            ->error('Import batch failed', [
-                'file_id' => $fileId,
-                'error' => $exception->getMessage(),
-                'trace' => $exception->getTraceAsString(),
-            ]);
-    }
 }
