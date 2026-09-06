@@ -20,21 +20,20 @@ class ExcelImporterServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'excel-importer');
         $this->registerEventListeners();
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
         $this->publishes([
-            __DIR__.'/config/excel-importer.php' => config_path('excel-importer.php'),
+            __DIR__.'/config/excel-importer.php' => config_path('listener.php'),
         ], 'config');
+        $this->publishes([
+            __DIR__.'/../resources/lang' => resource_path('lang/vendor/excel-importer'),
+        ], 'lang');
+
     }
 
     public function register()
     {
-        $this->loadTranslationsFrom(__DIR__ . '/../lang', 'excel-importer');
-
-        $this->publishes([
-            __DIR__ . '/../../lang' => $this->app->langPath('vendor/excel-importer'),
-        ], 'excel-importer-lang');
-
         $this->app->bind(ChunkService::class);
 
         $this->app->bind(RowExtractionService::class);
@@ -57,6 +56,6 @@ class ExcelImporterServiceProvider extends ServiceProvider
         Event::listen(ExcelFileRegistered::class, HandleExcelFileRegistered::class);
         Event::listen(FileSheetsScanCompleted::class, HandleFileSheetsScanCompleted::class);
         Event::listen(AllRowsExtracted::class, HandleAllRowsExtracted::class);
-        Event::listen(FileProcessingCompleted::class, InvokeImportHandler::class);
+//        Event::listen(FileProcessingCompleted::class, InvokeImportHandler::class);
     }
 }
