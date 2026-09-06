@@ -24,6 +24,7 @@ final class ExcelFile extends Model
         'status',
         'meta',
         'completed_at',
+        'rows_extracted_at',
         'error',
         'batch_id',
     ];
@@ -33,6 +34,7 @@ final class ExcelFile extends Model
         'size' => 'integer',
         'meta' => 'array',
         'completed_at' => 'datetime',
+        'rows_extracted_at' => 'datetime',
     ];
 
     public function excelSheets(): HasMany

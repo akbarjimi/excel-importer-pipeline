@@ -41,7 +41,9 @@ final class ExcelFileRepository
 
     public function markAsRowsExtracted(int $fileId): void
     {
-        $this->transitionTo($fileId, ExcelFileStatus::ROWS_EXTRACTED, ['rows_extracted_at' => now()]);
+        $this->transitionTo($fileId, ExcelFileStatus::ROWS_EXTRACTED, [
+            'rows_extracted_at' => now(),
+        ]);
     }
 
     public function markAsFailed(int $fileId, ?string $reason = null): void

@@ -23,6 +23,7 @@ return new class extends Migration {
             $table->text('error')->nullable();
             $table->string('batch_id')->nullable()->index();
 
+            $table->timestamp('rows_extracted_at')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
