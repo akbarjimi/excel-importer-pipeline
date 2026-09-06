@@ -10,6 +10,6 @@ final class FileNotFoundException extends ImportException
 {
     public static function make(string $disk, string $path): self
     {
-        return new self(trans('excel-importer::file.not_found', ['disk' => $disk, 'path' => $path]));
+        return new self("Excel file [{$path}] not found on disk [{$disk}].");
     }
 }

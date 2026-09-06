@@ -28,7 +28,8 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
     public function __construct(
         private readonly ExcelSheetRepository $sheetRepo,
         private readonly ExcelFileRepository $fileRepo,
-    ) {}
+    ) {
+    }
 
     public function viaQueue(): string
     {
@@ -46,15 +47,12 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
 
         $limit = (int) config('excel-importer.max_sheets', 50);
         if ($sheets->count() > $limit) {
-            $this->fileRepo->markAsFailed($event->fileId, trans('excel-importer::sheet_limit_exceeded', [
+            $message = "File contains {$sheets->count()} sheets, which exceeds the maximum of {$limit}.";
+            $this->fileRepo->markAsFailed($event->fileId, $message);
+
+            $this->importLog(LogLevel::WARNING, $message, [
                 'count' => $sheets->count(),
                 'limit' => $limit,
-            ]));
-
-            $this->importLog(LogLevel::WARNING, 'excel-importer::sheet_limit_exceeded', [
-                'file_id' => $event->fileId,
-                'count'   => $sheets->count(),
-                'limit'   => $limit,
             ]);
 
             return;
@@ -66,7 +64,7 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
         if (empty($jobs)) {
             $this->fileRepo->markAsRowsExtracted($fileId);
             AllRowsExtracted::dispatch($fileId);
-            $this->importLog(LogLevel::INFO, 'excel-importer::no_sheets_to_extract', ['file_id' => $fileId]);
+            $this->importLog(LogLevel::INFO, "No sheets to extract for file {$fileId}.");
             return;
         }
 
@@ -77,16 +75,14 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
             ->then(function (Batch $batch) use ($fileId) {
                 $this->fileRepo->markAsRowsExtracted($fileId);
                 AllRowsExtracted::dispatch($fileId);
-                $this->importLog(LogLevel::INFO, 'excel-importer::extraction_batch_completed', [
-                    'file_id' => $fileId,
+                $this->importLog(LogLevel::INFO, "All sheets extracted for file {$fileId}.", [
                     'batch_id' => $batch->id,
                 ]);
             })
             ->catch(function (Batch $batch, Throwable $e) use ($fileId) {
                 $this->fileRepo->markAsFailed($fileId, $e->getMessage());
-                $this->importLog(LogLevel::CRITICAL, 'excel-importer::extraction_batch_failed', [
-                    'file_id' => $fileId,
-                    'error'   => $e->getMessage(),
+                $this->importLog(LogLevel::CRITICAL, "Extraction batch failed for file {$fileId}. Error: {$e->getMessage()}", [
+                    'error' => $e->getMessage(),
                 ]);
             })
             ->finally(function (Batch $batch) use ($fileId) {

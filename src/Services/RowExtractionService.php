@@ -50,16 +50,14 @@ final class RowExtractionService
             $sheet->update(['rows_extracted_at' => now()]);
             $this->fileRepo->markAsRowsExtracted($sheet->excel_file_id);
 
-            $this->importLog(LogLevel::INFO, 'excel-importer::extraction_success', [
-                'sheet_id' => $sheet->id,
+            $this->importLog(LogLevel::INFO, "Extracted {$this->inserted} rows from sheet {$sheet->id}.", [
                 'rows' => $this->inserted,
             ]);
 
             return $this->inserted;
         } catch (Throwable $e) {
             $this->fileRepo->markAsFailed($sheet->excel_file_id, $e->getMessage());
-            $this->importLog(LogLevel::CRITICAL, 'excel-importer::extraction_failed', [
-                'sheet_id' => $sheet->id,
+            $this->importLog(LogLevel::CRITICAL, "Extraction failed for sheet {$sheet->id}. Error: {$e->getMessage()}", [
                 'error' => $e->getMessage(),
             ]);
             throw $e;

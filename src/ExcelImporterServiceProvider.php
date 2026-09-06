@@ -20,15 +20,11 @@ class ExcelImporterServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'excel-importer');
         $this->registerEventListeners();
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
         $this->publishes([
             __DIR__.'/config/excel-importer.php' => config_path('listener.php'),
         ], 'config');
-        $this->publishes([
-            __DIR__.'/../resources/lang' => resource_path('lang/vendor/excel-importer'),
-        ], 'lang');
 
     }
 

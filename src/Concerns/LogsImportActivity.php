@@ -9,11 +9,14 @@ use Illuminate\Support\Facades\Log;
 
 trait LogsImportActivity
 {
-    protected function importLog(LogLevel $level, string $messageKey, array $context = []): void
+    protected function importLog(LogLevel $level, string $message, array $context = []): void
     {
-        $message = trans($messageKey, $context);
         $channel = config('excel-importer.logging.channels', config('logging.default', 'stack'));
 
-        Log::channel($channel)->log($level->value, $message, array_merge(['package' => 'excel-importer'], $context));
+        Log::channel($channel)->log(
+            $level->value,
+            $message,
+            array_merge(['package' => 'excel-importer'], $context)
+        );
     }
 }

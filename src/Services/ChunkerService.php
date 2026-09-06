@@ -42,20 +42,19 @@ final class ChunkerService
                 $chunks = $rowIds->chunk($this->chunkSize)->map(function ($idChunk) use ($sheet) {
                     return ExcelRowChunk::create([
                         'excel_sheet_id' => $sheet->getKey(),
-                        'from_row_id'    => $idChunk->first(),
-                        'to_row_id'      => $idChunk->last(),
-                        'size'           => $idChunk->count(),
-                        'status'         => ExcelChunkStatus::PENDING,
+                        'from_row_id' => $idChunk->first(),
+                        'to_row_id' => $idChunk->last(),
+                        'size' => $idChunk->count(),
+                        'status' => ExcelChunkStatus::PENDING,
                     ]);
                 });
 
                 $allChunks = $allChunks->merge($chunks);
             }
 
-            $this->importLog(LogLevel::INFO, 'excel-importer::chunks_created', [
-                'file_id'    => $file->getKey(),
-                'chunk_count'  => $allChunks->count(),
-                'chunk_size'   => $this->chunkSize,
+            $this->importLog(LogLevel::INFO, "Created {$allChunks->count()} chunks (size {$this->chunkSize}) for file {$file->getKey()}.", [
+                'chunk_count' => $allChunks->count(),
+                'chunk_size' => $this->chunkSize,
             ]);
 
             return $allChunks;
