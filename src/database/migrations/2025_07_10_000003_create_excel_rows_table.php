@@ -10,27 +10,17 @@ return new class extends Migration {
     {
         Schema::create('excel_rows', function (Blueprint $table) {
             $table->id();
-
             $table->foreignId('excel_sheet_id')
                 ->constrained()
                 ->onDelete('cascade')
                 ->index();
-
             $table->unsignedInteger('row_index')->nullable();
-
             $table->json('content');
-
             $table->string('hash_algo')->default('md5');
             $table->string('content_hash')->nullable();
-
-            $table->enum('status',
-                array_column(ExcelRowStatus::cases(), 'value'),
-            )->default(ExcelRowStatus::PENDING->value)->index();
-
+            $table->string('status', 32)->default(ExcelRowStatus::PENDING->value)->index();
             $table->unsignedInteger('chunk_index')->nullable()->index();
-
-            $table->timestamp('mapped_at')->nullable();
-
+            $table->softDeletes();
             $table->timestamps();
 
             $table->unique(['excel_sheet_id', 'content_hash', 'hash_algo'], 'sheet_content_hash_unique');
