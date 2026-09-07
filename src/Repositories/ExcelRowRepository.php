@@ -12,14 +12,6 @@ use Illuminate\Support\LazyCollection;
 
 final class ExcelRowRepository
 {
-    public function bulkInsert(array $rows): void
-    {
-        if (empty($rows)) {
-            return;
-        }
-        DB::table('excel_rows')->insert($rows);
-    }
-
     public function bulkUpsert(array $rows, int $chunkSize = 500): void
     {
         collect($rows)

@@ -60,23 +60,4 @@ final class ChunkerService
             return $allChunks;
         }, 3);
     }
-
-    public function allChunksProcessed(ExcelFile $file): bool
-    {
-        $sheets = $file->relationLoaded('excelSheets')
-            ? $file->excelSheets
-            : $file->excelSheets()->get();
-
-        foreach ($sheets as $sheet) {
-            if ((int) $sheet->chunk_count === 0) {
-                return false;
-            }
-
-            if ((int) $sheet->processed_chunks < (int) $sheet->chunk_count) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 }
