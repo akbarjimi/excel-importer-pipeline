@@ -33,7 +33,7 @@ final class MaatwebsiteDriver implements ExcelReaderDriver
         $worksheetsInfo = $reader->listWorksheetInfo($filePath);
 
         return array_values(array_map(
-            static fn(array $info, int $index): SheetInfo => SheetInfo::fromPhpSpreadsheet($info, $index),
+            static fn (array $info, int $index): SheetInfo => SheetInfo::fromPhpSpreadsheet($info, $index),
             $worksheetsInfo,
             array_keys($worksheetsInfo),
         ));

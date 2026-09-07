@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Services;
 
+use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
-use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
 
 final class ImportManager
 {

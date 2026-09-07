@@ -9,7 +9,6 @@ use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Exceptions\Sheet\EmptySheetException;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 
 final class ExcelSheetRepository
 {
@@ -21,7 +20,7 @@ final class ExcelSheetRepository
 
         $now = now();
 
-        $rows = array_map(static fn(SheetInfo $sheet): array => [
+        $rows = array_map(static fn (SheetInfo $sheet): array => [
             'excel_file_id' => $fileId,
             'name' => $sheet->name,
             'sheet_index' => $sheet->index,
@@ -60,7 +59,7 @@ final class ExcelSheetRepository
     public function transitionTo(int $sheetId, ExcelSheetStatus $newStatus): void
     {
         $sheet = ExcelSheet::findOrFail($sheetId);
-        if (!$sheet->status->canTransitionTo($newStatus)) {
+        if (! $sheet->status->canTransitionTo($newStatus)) {
             throw new \RuntimeException(
                 "Invalid transition from {$sheet->status->value} to {$newStatus->value}"
             );

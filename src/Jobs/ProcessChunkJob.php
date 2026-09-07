@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Jobs;
 
-use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Enums\ExcelChunkStatus;
 use Akbarjimi\ExcelImporter\Enums\ExcelRowStatus;
 use Akbarjimi\ExcelImporter\Enums\LogLevel;
@@ -30,11 +29,10 @@ final class ProcessChunkJob implements ShouldQueue
     use Batchable, Dispatchable, InteractsWithQueue, Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 300;
 
-    public function __construct(public readonly int $chunkId)
-    {
-    }
+    public function __construct(public readonly int $chunkId) {}
 
     public function middleware(): array
     {
@@ -47,11 +45,10 @@ final class ProcessChunkJob implements ShouldQueue
     }
 
     public function handle(
-        TransformService   $transform,
-        ValidateService    $validate,
+        TransformService $transform,
+        ValidateService $validate,
         ExcelRowRepository $rowRepo,
-    ): void
-    {
+    ): void {
         /** @var ExcelRowChunk $chunk */
         $chunk = ExcelRowChunk::findOrFail($this->chunkId);
         $sheet = ExcelSheet::findOrFail($chunk->excel_sheet_id);
@@ -60,6 +57,7 @@ final class ProcessChunkJob implements ShouldQueue
         if ($file->trashed()) {
             // If file is deleted, mark chunk as failed and exit.
             $chunk->update(['status' => ExcelChunkStatus::FAILED, 'error' => 'File deleted.']);
+
             return;
         }
 
@@ -79,7 +77,7 @@ final class ProcessChunkJob implements ShouldQueue
             ->cursor();
 
         $buffer = [];
-        $batchSize = (int)config('excel-importer.insert_batch_size', 100);
+        $batchSize = (int) config('excel-importer.insert_batch_size', 100);
         $processed = 0;
 
         DB::beginTransaction();
@@ -90,8 +88,9 @@ final class ProcessChunkJob implements ShouldQueue
                     $payload = $transform->apply($row->content ?? $row->toArray(), $sheet);
                     $errors = $validate->apply($payload);
 
-                    if (!empty($errors)) {
+                    if (! empty($errors)) {
                         $this->recordRowErrors($row, $errors);
+
                         continue;
                     }
 
@@ -114,7 +113,7 @@ final class ProcessChunkJob implements ShouldQueue
                 }
             }
 
-            if (!empty($buffer)) {
+            if (! empty($buffer)) {
                 $rowRepo->bulkUpsert($buffer);
                 $processed += count($buffer);
             }

@@ -20,14 +20,14 @@ abstract class TestCase extends Orchestra
         config(['queue.default' => 'sync']);
 
         // Load the test config for sheets
-        config(['excel-importer-sheets' => require __DIR__ . '/_fixtures/config/excel-importer-sheets.php']);
+        config(['excel-importer-sheets' => require __DIR__.'/_fixtures/config/excel-importer-sheets.php']);
 
         // Fake events and jobs by default (can be overridden in specific tests)
         Event::fake();
         Bus::fake();
         Queue::fake();
 
-        $this->app['translator']->addNamespace('excel-importer', __DIR__ . '/../lang');
+        $this->app['translator']->addNamespace('excel-importer', __DIR__.'/../lang');
         $this->app->setLocale('en');
     }
 
@@ -59,7 +59,7 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../src/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../src/database/migrations');
     }
 
     /**
@@ -70,7 +70,7 @@ abstract class TestCase extends Orchestra
         $storagePath = storage_path($destination);
         $directory = dirname($storagePath);
 
-        if (!is_dir($directory)) {
+        if (! is_dir($directory)) {
             mkdir($directory, 0755, true);
         }
 

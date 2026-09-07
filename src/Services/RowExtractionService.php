@@ -6,7 +6,6 @@ namespace Akbarjimi\ExcelImporter\Services;
 
 use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
-use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
@@ -18,8 +17,11 @@ final class RowExtractionService
     use LogsImportActivity;
 
     private array $buffer = [];
+
     private int $inserted = 0;
+
     private int $batchSize;
+
     private string $hashAlgo;
 
     public function __construct(
@@ -42,7 +44,7 @@ final class RowExtractionService
             $this->driver->readRows(
                 $sheet->excelFile->path,
                 $sheet->sheet_index,
-                fn(array $row) => $this->bufferRow($row, $sheet)
+                fn (array $row) => $this->bufferRow($row, $sheet)
             );
 
             $this->flushBuffer($sheet);

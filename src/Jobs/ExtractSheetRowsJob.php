@@ -21,13 +21,14 @@ final class ExtractSheetRowsJob implements ShouldQueue
     use Queueable;
 
     public int $tries = 3;
+
     public int $backoff = 10;
 
     public function __construct(public readonly int $sheetId) {}
 
     public function middleware(): array
     {
-        return [new SkipIfBatchCancelled()];
+        return [new SkipIfBatchCancelled];
     }
 
     public function tags(): array
@@ -42,7 +43,7 @@ final class ExtractSheetRowsJob implements ShouldQueue
         $sheet = $sheetRepo->getById($this->sheetId);
 
         // If sheet is soft-deleted or missing, skip.
-        if (!$sheet || $sheet->trashed()) {
+        if (! $sheet || $sheet->trashed()) {
             return;
         }
 

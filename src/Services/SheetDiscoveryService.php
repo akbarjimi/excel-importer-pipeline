@@ -11,16 +11,12 @@ use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use RuntimeException;
 
-
 final class SheetDiscoveryService
 {
-
     public function __construct(
         private FilesystemFactory $storage,
         private ExcelReaderDriver $driver,
-    )
-    {
-    }
+    ) {}
 
     /**
      * @return list<SheetInfo>

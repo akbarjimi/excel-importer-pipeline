@@ -21,14 +21,14 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
     use LogsImportActivity;
 
     public int $tries = 3;
+
     public int $backoff = 10;
 
     public function __construct(
         private readonly SheetDiscoveryService $discovery,
         private readonly ExcelFileRepository $fileRepo,
         private readonly ExcelSheetRepository $sheetRepo,
-    ) {
-    }
+    ) {}
 
     public function viaQueue(): string
     {
@@ -46,12 +46,14 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
         if ($file === null) {
             $this->importLog(LogLevel::WARNING, "File {$event->excelFileId} not found.");
+
             return;
         }
 
         if ($this->sheetRepo->existsForFile($file->id)) {
             $this->importLog(LogLevel::INFO, "Sheets already exist for file {$file->id}. Skipping discovery.");
             FileSheetsScanCompleted::dispatch($file->id);
+
             return;
         }
 
@@ -63,11 +65,12 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
             if (empty($sheets)) {
                 $this->importLog(LogLevel::WARNING, "No sheets found for file {$file->id}.");
                 $this->fileRepo->markAsFailed($file->id, 'No sheets discovered');
+
                 return;
             }
 
             $this->sheetRepo->bulkCreate($file->id, $sheets);
-            $this->importLog(LogLevel::INFO, "Sheets discovered for file {$file->id}. Count: " . count($sheets), [
+            $this->importLog(LogLevel::INFO, "Sheets discovered for file {$file->id}. Count: ".count($sheets), [
                 'count' => count($sheets),
             ]);
 

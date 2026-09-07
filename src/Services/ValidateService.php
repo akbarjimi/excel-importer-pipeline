@@ -20,6 +20,7 @@ final class ValidateService
             if ($this->config->get('excel-importer.strict_validation', false)) {
                 throw new \RuntimeException("No validation rules loaded for sheet [{$sheet->name}].");
             }
+
             return [];
         }
 

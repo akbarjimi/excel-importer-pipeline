@@ -10,7 +10,6 @@ use Akbarjimi\ExcelImporter\Exceptions\Sheet\EmptySheetException;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Repositories\ExcelSheetRepository;
-use Akbarjimi\ExcelImporter\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -23,7 +22,7 @@ describe('ExcelSheetRepository', function () {
     uses(RefreshDatabase::class);
 
     beforeEach(function () {
-        $this->repo = new ExcelSheetRepository();
+        $this->repo = new ExcelSheetRepository;
         $this->file = ExcelFile::factory()->create();
     });
 
@@ -52,7 +51,7 @@ describe('ExcelSheetRepository', function () {
     });
 
     it('throws EmptySheetException when no sheets provided', function () {
-        expect(fn() => $this->repo->bulkCreate($this->file->id, []))
+        expect(fn () => $this->repo->bulkCreate($this->file->id, []))
             ->toThrow(EmptySheetException::class, 'No sheets discovered');
     });
 
@@ -99,7 +98,7 @@ describe('ExcelSheetRepository', function () {
             'status' => ExcelSheetStatus::COMPLETED,
         ]);
 
-        expect(fn() => $this->repo->transitionTo($sheet->id, ExcelSheetStatus::EXTRACTING))
+        expect(fn () => $this->repo->transitionTo($sheet->id, ExcelSheetStatus::EXTRACTING))
             ->toThrow(\RuntimeException::class, 'Invalid transition');
     });
 

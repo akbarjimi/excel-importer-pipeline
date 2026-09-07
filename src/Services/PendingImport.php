@@ -17,20 +17,19 @@ use Illuminate\Support\Facades\DB;
 final class PendingImport
 {
     private string $handler;
+
     private array $meta = [];
 
     public function __construct(
-        private readonly string              $path,
-        private readonly string              $disk,
-        private readonly FilesystemFactory   $storageFactory,
+        private readonly string $path,
+        private readonly string $disk,
+        private readonly FilesystemFactory $storageFactory,
         private readonly ExcelFileRepository $fileRepo,
-    )
-    {
-    }
+    ) {}
 
     public function withHandler(string $handlerClass): self
     {
-        if (!is_a($handlerClass, ImportHandler::class, true)) {
+        if (! is_a($handlerClass, ImportHandler::class, true)) {
             throw new \InvalidArgumentException(
                 sprintf('Handler must implement [%s]', ImportHandler::class)
             );
@@ -50,13 +49,13 @@ final class PendingImport
 
     public function dispatch(): ExcelFile
     {
-        if (!isset($this->handler)) {
+        if (! isset($this->handler)) {
             throw MissingHandlerException::make();
         }
 
         $storage = $this->storageFactory->disk($this->disk);
 
-        if (!$storage->exists($this->path)) {
+        if (! $storage->exists($this->path)) {
             throw ImportFileNotFoundException::make($this->disk, $this->path);
         }
 
@@ -67,7 +66,7 @@ final class PendingImport
                 'disk' => $this->disk,
                 'size' => $storage->size($this->path),
                 'meta' => array_merge($this->meta, ['handler' => $this->handler]),
-                'status' => ExcelFileStatus::PENDING
+                'status' => ExcelFileStatus::PENDING,
             ];
 
             $file = $this->fileRepo->create($data);

@@ -6,9 +6,6 @@ namespace Akbarjimi\ExcelImporter\Repositories;
 
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 final class ExcelFileRepository
 {
@@ -19,16 +16,17 @@ final class ExcelFileRepository
 
     public function create(array $data): ExcelFile
     {
-        if (!isset($data['status'])) {
+        if (! isset($data['status'])) {
             $data['status'] = ExcelFileStatus::PENDING->value;
         }
+
         return ExcelFile::create($data);
     }
 
     public function transitionTo(int $fileId, ExcelFileStatus $newStatus, array $extra = []): void
     {
         $file = ExcelFile::findOrFail($fileId);
-        if (!$file->status->canTransitionTo($newStatus)) {
+        if (! $file->status->canTransitionTo($newStatus)) {
             throw new \RuntimeException(
                 "Invalid status transition from {$file->status->value} to {$newStatus->value}"
             );
@@ -72,6 +70,7 @@ final class ExcelFileRepository
     public function getHandler(int $fileId): ?string
     {
         $file = ExcelFile::find($fileId);
+
         return $file ? ($file->meta['handler'] ?? null) : null;
     }
 

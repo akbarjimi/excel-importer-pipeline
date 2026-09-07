@@ -15,8 +15,8 @@ class ExcelFileFactory extends Factory
     public function definition(): array
     {
         return [
-            'file_name' => $this->faker->word() . '.xlsx',
-            'path' => 'testing/' . $this->faker->uuid() . '.xlsx',
+            'file_name' => $this->faker->word().'.xlsx',
+            'path' => 'testing/'.$this->faker->uuid().'.xlsx',
             'disk' => 'local',
             'size' => $this->faker->numberBetween(1024, 10485760),
             'status' => ExcelFileStatus::PENDING,

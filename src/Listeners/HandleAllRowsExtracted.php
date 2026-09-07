@@ -23,13 +23,13 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
     use LogsImportActivity;
 
     public int $tries = 3;
+
     public int $timeout = 60;
 
     public function __construct(
         private readonly ChunkerService $chunker,
         private readonly ExcelFileRepository $fileRepo,
-    ) {
-    }
+    ) {}
 
     public function viaQueue(): string
     {
@@ -44,8 +44,9 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
     public function handle(AllRowsExtracted $event): void
     {
         $file = $this->fileRepo->findFile($event->fileId, ['excelSheets']);
-        if (!$file || $file->trashed()) {
+        if (! $file || $file->trashed()) {
             $this->importLog(LogLevel::WARNING, "File {$event->fileId} has been deleted. Skipping further processing.");
+
             return;
         }
 
@@ -55,13 +56,14 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
             $this->importLog(LogLevel::WARNING, "No chunks created for file {$file->id} – marking as completed.");
             $this->fileRepo->markAsCompleted($file->id);
             FileProcessingCompleted::dispatch($file->id);
+
             return;
         }
 
         $fileId = $file->id;
         $this->fileRepo->markAsProcessing($fileId);
 
-        $jobs = $chunks->map(fn($chunk) => new ProcessChunkJob($chunk->id))->all();
+        $jobs = $chunks->map(fn ($chunk) => new ProcessChunkJob($chunk->id))->all();
 
         Bus::batch($jobs)
             ->name("excel-process:{$fileId}")
@@ -85,7 +87,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
             })
             ->dispatch();
 
-        $this->importLog(LogLevel::INFO, "Chunk jobs batched for file {$fileId}. Count: " . count($jobs), [
+        $this->importLog(LogLevel::INFO, "Chunk jobs batched for file {$fileId}. Count: ".count($jobs), [
             'count' => count($jobs),
         ]);
     }

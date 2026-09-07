@@ -25,7 +25,7 @@ final class ExcelRowRepository
         collect($rows)
             ->chunk($chunkSize)
             ->each(function ($chunk) {
-                $sanitized = $chunk->map(fn($row) => array_diff_key($row, ['id' => null]))->all();
+                $sanitized = $chunk->map(fn ($row) => array_diff_key($row, ['id' => null]))->all();
                 DB::table('excel_rows')->upsert(
                     $sanitized,
                     ['excel_sheet_id', 'content_hash', 'hash_algo'],
@@ -37,11 +37,11 @@ final class ExcelRowRepository
     public function getValidatedRowsForFile(int $fileId): LazyCollection
     {
         return ExcelRow::query()
-            ->whereHas('excelSheet', fn($q) => $q->where('excel_file_id', $fileId))
+            ->whereHas('excelSheet', fn ($q) => $q->where('excel_file_id', $fileId))
             ->where('status', ExcelRowStatus::VALIDATED->value)
             ->orderBy('id')
             ->lazy()
-            ->map(fn(ExcelRow $row) => new ValidatedRow(
+            ->map(fn (ExcelRow $row) => new ValidatedRow(
                 rowIndex: $row->row_index,
                 data: $row->content,
             ));
@@ -50,7 +50,7 @@ final class ExcelRowRepository
     public function transitionTo(int $rowId, ExcelRowStatus $newStatus): void
     {
         $row = ExcelRow::findOrFail($rowId);
-        if (!$row->status->canTransitionTo($newStatus)) {
+        if (! $row->status->canTransitionTo($newStatus)) {
             throw new \RuntimeException(
                 "Invalid transition from {$row->status->value} to {$newStatus->value}"
             );

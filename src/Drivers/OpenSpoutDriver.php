@@ -7,17 +7,16 @@ namespace Akbarjimi\ExcelImporter\Drivers;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use OpenSpout\Reader\XLSX\Reader;
-use OpenSpout\Common\Exception\IOException;
 
 final class OpenSpoutDriver implements ExcelReaderDriver
 {
     public function readRows(string $filePath, int $sheetIndex, callable $callback): void
     {
-        if (!is_file($filePath)) {
+        if (! is_file($filePath)) {
             throw new \InvalidArgumentException("File not found: {$filePath}");
         }
 
-        $reader = new Reader();
+        $reader = new Reader;
         $reader->open($filePath);
 
         try {
@@ -41,11 +40,11 @@ final class OpenSpoutDriver implements ExcelReaderDriver
 
     public function listSheets(string $filePath): array
     {
-        if (!is_file($filePath)) {
+        if (! is_file($filePath)) {
             throw new \InvalidArgumentException("File not found: {$filePath}");
         }
 
-        $reader = new Reader();
+        $reader = new Reader;
         $reader->open($filePath);
 
         $sheets = [];
@@ -60,6 +59,7 @@ final class OpenSpoutDriver implements ExcelReaderDriver
         }
 
         $reader->close();
+
         return $sheets;
     }
 

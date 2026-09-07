@@ -21,8 +21,7 @@ final class InvokeImportHandler implements ShouldQueueAfterCommit
     public function __construct(
         private readonly ExcelFileRepository $fileRepo,
         private readonly ExcelRowRepository $rowRepo,
-    ) {
-    }
+    ) {}
 
     public function viaQueue(): string
     {
@@ -38,8 +37,9 @@ final class InvokeImportHandler implements ShouldQueueAfterCommit
     {
         $handlerClass = $this->fileRepo->getHandler($event->fileId);
 
-        if (!$handlerClass || !class_exists($handlerClass)) {
+        if (! $handlerClass || ! class_exists($handlerClass)) {
             $this->importLog(LogLevel::WARNING, "No handler found for file {$event->fileId}.");
+
             return;
         }
 

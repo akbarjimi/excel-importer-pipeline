@@ -1,9 +1,10 @@
-<?php 
+<?php
 
 namespace Akbarjimi\ExcelImporter\Support;
 
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
-use Akbarjimi\ExcelImporter\Drivers\{MaatwebsiteDriver, OpenSpoutDriver};
+use Akbarjimi\ExcelImporter\Drivers\MaatwebsiteDriver;
+use Akbarjimi\ExcelImporter\Drivers\OpenSpoutDriver;
 use Akbarjimi\ExcelImporter\Exceptions\MissingDriverDependencyException;
 use Illuminate\Support\Manager;
 
@@ -18,14 +19,14 @@ class ExcelReaderManager extends Manager
     {
         $this->ensureInstalled(\Maatwebsite\Excel\Excel::class, 'maatwebsite', 'maatwebsite/excel');
 
-        return new MaatwebsiteDriver();
+        return new MaatwebsiteDriver;
     }
 
     protected function createOpenspoutDriver(): ExcelReaderDriver
     {
         $this->ensureInstalled(\OpenSpout\Reader\XLSX\Reader::class, 'openspout', 'openspout/openspout');
 
-        return new OpenSpoutDriver();
+        return new OpenSpoutDriver;
     }
 
     private function ensureInstalled(string $class, string $driver, string $package): void

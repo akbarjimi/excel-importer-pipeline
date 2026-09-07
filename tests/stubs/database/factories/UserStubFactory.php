@@ -12,9 +12,9 @@ class UserStubFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'  => $this->faker->name,
+            'name' => $this->faker->name,
             'email' => $this->faker->unique()->safeEmail,
-            'age'   => $this->faker->numberBetween(18, 80),
+            'age' => $this->faker->numberBetween(18, 80),
         ];
     }
 }

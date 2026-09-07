@@ -23,13 +23,13 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
     use LogsImportActivity;
 
     public int $tries = 3;
+
     public int $backoff = 10;
 
     public function __construct(
         private readonly ExcelSheetRepository $sheetRepo,
         private readonly ExcelFileRepository $fileRepo,
-    ) {
-    }
+    ) {}
 
     public function viaQueue(): string
     {
@@ -59,12 +59,13 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
         }
 
         $fileId = $event->fileId;
-        $jobs = $sheets->map(fn($sheet) => new ExtractSheetRowsJob($sheet->id))->all();
+        $jobs = $sheets->map(fn ($sheet) => new ExtractSheetRowsJob($sheet->id))->all();
 
         if (empty($jobs)) {
             $this->fileRepo->markAsRowsExtracted($fileId);
             AllRowsExtracted::dispatch($fileId);
             $this->importLog(LogLevel::INFO, "No sheets to extract for file {$fileId}.");
+
             return;
         }
 

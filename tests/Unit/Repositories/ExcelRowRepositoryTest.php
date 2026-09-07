@@ -10,7 +10,6 @@ use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
-use Akbarjimi\ExcelImporter\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /**
@@ -23,7 +22,7 @@ describe('ExcelRowRepository', function () {
     uses(RefreshDatabase::class);
 
     beforeEach(function () {
-        $this->repo = new ExcelRowRepository();
+        $this->repo = new ExcelRowRepository;
         $this->file = ExcelFile::factory()->create();
         $this->sheet = ExcelSheet::factory()->for($this->file)->create();
     });
@@ -144,7 +143,7 @@ describe('ExcelRowRepository', function () {
             'status' => ExcelRowStatus::PROCESSED,
         ]);
 
-        expect(fn() => $this->repo->transitionTo($row->id, ExcelRowStatus::VALIDATING))
+        expect(fn () => $this->repo->transitionTo($row->id, ExcelRowStatus::VALIDATING))
             ->toThrow(\RuntimeException::class, 'Invalid transition');
     });
 });

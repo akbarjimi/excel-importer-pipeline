@@ -20,7 +20,7 @@ describe('ExcelFileRepository', function () {
     uses(RefreshDatabase::class);
 
     beforeEach(function () {
-        $this->repo = new ExcelFileRepository();
+        $this->repo = new ExcelFileRepository;
     });
 
     it('creates a new file record', function () {
@@ -30,7 +30,7 @@ describe('ExcelFileRepository', function () {
             'disk' => 'local',
             'size' => 1024,
             'meta' => ['handler' => 'App\\Handlers\\TestHandler'],
-            'status' => ExcelFileStatus::PENDING
+            'status' => ExcelFileStatus::PENDING,
         ];
 
         $file = $this->repo->create($data);
@@ -71,7 +71,7 @@ describe('ExcelFileRepository', function () {
     it('throws an exception on invalid transition', function () {
         $file = ExcelFile::factory()->create(['status' => ExcelFileStatus::COMPLETED]);
 
-        expect(fn() => $this->repo->transitionTo($file->id, ExcelFileStatus::PROCESSING))
+        expect(fn () => $this->repo->transitionTo($file->id, ExcelFileStatus::PROCESSING))
             ->toThrow(\RuntimeException::class, 'Invalid status transition');
     });
 

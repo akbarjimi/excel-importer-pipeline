@@ -10,7 +10,7 @@ class MissingDriverDependencyException extends RuntimeException
     {
         return new self(
             "The [{$driver}] Excel reader driver requires the [{$package}] package, which is not installed. "
-            . "Install it with: composer require {$package}"
+            ."Install it with: composer require {$package}"
         );
     }
 }

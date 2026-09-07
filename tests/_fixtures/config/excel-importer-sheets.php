@@ -6,9 +6,9 @@ return [
     // 1sheet3rows1header.xlsx
     'Sheet1' => [
         'transformers' => [
-            'A1' => fn(string $value): string => strtoupper($value),
-            'B1' => fn(string $value): string => strtolower($value),
-            'C1' => fn(string|int $value): int => (int) $value,
+            'A1' => fn (string $value): string => strtoupper($value),
+            'B1' => fn (string $value): string => strtolower($value),
+            'C1' => fn (string|int $value): int => (int) $value,
         ],
         'validation' => [
             'A1' => 'required|string|max:255',
@@ -16,12 +16,13 @@ return [
             'C1' => 'required|integer|min:31',
         ],
         'mapper' => function (array $row) {
-            $user = new UserStub();
+            $user = new UserStub;
             $user->fill([
                 'name' => $row['A1'],
                 'email' => $row['B1'],
                 'age' => $row['C1'],
             ]);
+
             return $user;
         },
     ],

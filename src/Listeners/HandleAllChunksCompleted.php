@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\Queue;
 
 final class HandleAllChunksCompleted
 {
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function handle(SheetProcessingCompleted $event): void
     {
