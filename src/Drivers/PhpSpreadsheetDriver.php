@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Akbarjimi\ExcelImporter\Drivers;
 
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
+use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
-final class MaatwebsiteDriver implements ExcelReaderDriver
+final class PhpSpreadsheetDriver implements ExcelReaderDriver
 {
     public function readRows(string $filePath, int $sheetIndex, callable $callback): void
     {
@@ -21,7 +22,7 @@ final class MaatwebsiteDriver implements ExcelReaderDriver
             foreach ($row->getCellIterator() as $cell) {
                 $cells[] = $cell->getFormattedValue();
             }
-            $callback($cells, $rowNumber - 1); // 0-based
+            $callback(new RowData($cells, $rowNumber - 1));// 0-based
         }
 
         $spreadsheet->disconnect();
