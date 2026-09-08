@@ -26,11 +26,9 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
     public function __construct(
         private readonly SheetDiscoveryService $discoveryService,
-        private readonly ExcelFileRepository   $fileRepository,
-        private readonly ExcelSheetRepository  $sheetRepository,
-    )
-    {
-    }
+        private readonly ExcelFileRepository $fileRepository,
+        private readonly ExcelSheetRepository $sheetRepository,
+    ) {}
 
     public function viaQueue(): string
     {
@@ -72,7 +70,7 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
             }
 
             $this->sheetRepository->bulkCreate($file->id, $sheets);
-            $this->importLog(LogLevel::INFO, "Sheets discovered for file {$file->id}. Count: " . count($sheets), [
+            $this->importLog(LogLevel::INFO, "Sheets discovered for file {$file->id}. Count: ".count($sheets), [
                 'count' => count($sheets),
             ]);
 

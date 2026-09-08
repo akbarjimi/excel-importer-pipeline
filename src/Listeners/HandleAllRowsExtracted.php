@@ -10,7 +10,6 @@ use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
 use Akbarjimi\ExcelImporter\Events\FileProcessingCompleted;
 use Akbarjimi\ExcelImporter\Jobs\ProcessChunkJob;
 use Akbarjimi\ExcelImporter\Repositories\ExcelFileRepository;
-use Akbarjimi\ExcelImporter\Services\ChunkerService;
 use Illuminate\Bus\Batch;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
@@ -27,11 +26,9 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
     public int $timeout = 60;
 
     public function __construct(
-        private readonly ChunkerInterface    $chunker,
+        private readonly ChunkerInterface $chunker,
         private readonly ExcelFileRepository $fileRepository,
-    )
-    {
-    }
+    ) {}
 
     public function viaQueue(): string
     {
@@ -46,7 +43,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
     public function handle(AllRowsExtracted $event): void
     {
         $file = $this->fileRepository->findFile($event->fileId, ['excelSheets']);
-        if (!$file || $file->trashed()) {
+        if (! $file || $file->trashed()) {
             $this->importLog(LogLevel::WARNING, "File {$event->fileId} has been deleted. Skipping further processing.");
 
             return;
@@ -65,7 +62,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
         $fileId = $file->id;
         $this->fileRepository->markAsProcessing($fileId);
 
-        $jobs = $chunks->map(fn($chunk) => new ProcessChunkJob($chunk->id))->all();
+        $jobs = $chunks->map(fn ($chunk) => new ProcessChunkJob($chunk->id))->all();
 
         Bus::batch($jobs)
             ->name("excel-process:{$fileId}")
@@ -89,7 +86,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
             })
             ->dispatch();
 
-        $this->importLog(LogLevel::INFO, "Chunk jobs batched for file {$fileId}. Count: " . count($jobs), [
+        $this->importLog(LogLevel::INFO, "Chunk jobs batched for file {$fileId}. Count: ".count($jobs), [
             'count' => count($jobs),
         ]);
     }

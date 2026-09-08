@@ -10,11 +10,11 @@ trait HasStatusTransitions
 {
     private function transitionStatus(Model $model, mixed $newStatus, array $extra = []): void
     {
-        if (!method_exists($model->status, 'canTransitionTo')) {
+        if (! method_exists($model->status, 'canTransitionTo')) {
             throw new \RuntimeException('Model status must have canTransitionTo method.');
         }
 
-        if (!$model->status->canTransitionTo($newStatus)) {
+        if (! $model->status->canTransitionTo($newStatus)) {
             throw new \RuntimeException(
                 "Invalid status transition from {$model->status->value} to {$newStatus->value}"
             );

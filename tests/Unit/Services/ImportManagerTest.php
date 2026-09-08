@@ -6,7 +6,6 @@ namespace Akbarjimi\ExcelImporter\Tests\Unit\Services;
 
 use Akbarjimi\ExcelImporter\Services\ImportManager;
 use Akbarjimi\ExcelImporter\Services\PendingImport;
-use Akbarjimi\ExcelImporter\Tests\TestCase;
 
 /**
  * Tests the ImportManager entry point.

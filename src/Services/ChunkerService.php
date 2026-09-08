@@ -11,9 +11,6 @@ use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
-use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelRowChunkRepositoryInterface;
-use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelRowRepositoryInterface;
-use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelSheetRepositoryInterface;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowChunkRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelSheetRepository;
@@ -25,13 +22,11 @@ final class ChunkerService implements ChunkerInterface
     use LogsImportActivity;
 
     public function __construct(
-        private readonly int                     $chunkSize,
-        private readonly ExcelRowRepository      $rowRepo,
+        private readonly int $chunkSize,
+        private readonly ExcelRowRepository $rowRepo,
         private readonly ExcelRowChunkRepository $chunkRepo,
-        private readonly ExcelSheetRepository    $sheetRepo,
-    )
-    {
-    }
+        private readonly ExcelSheetRepository $sheetRepo,
+    ) {}
 
     public function createChunksForFile(ExcelFile $file): Collection
     {
@@ -61,7 +56,7 @@ final class ChunkerService implements ChunkerInterface
         $this->rowRepo->chunkRowIdsBySheet(
             $sheetId,
             $this->chunkSize,
-            function ($idChunk) use ($sheetId, &$chunkData, $sheet) {
+            function ($idChunk) use ($sheetId, &$chunkData) {
                 $chunkData[] = [
                     'excel_sheet_id' => $sheetId,
                     'from_row_id' => $idChunk->first(),

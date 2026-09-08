@@ -26,7 +26,7 @@ final class ExcelRowChunkRepository
         $maxTo = max($toRowIds);
 
         $sheetId = $data[0]['excel_sheet_id'] ?? null;
-        if (!$sheetId) {
+        if (! $sheetId) {
             return collect($data); // fallback, but IDs will be missing
         }
 

@@ -22,7 +22,7 @@ final class PhpSpreadsheetDriver implements ExcelReaderDriver
             foreach ($row->getCellIterator() as $cell) {
                 $cells[] = $cell->getFormattedValue();
             }
-            $callback(new RowData($cells, $rowNumber - 1));// 0-based
+            $callback(new RowData($cells, $rowNumber - 1)); // 0-based
         }
 
         $spreadsheet->disconnect();

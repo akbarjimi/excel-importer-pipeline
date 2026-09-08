@@ -20,17 +20,19 @@ final class RowExtractionService implements RowExtractorInterface
 
     /** @var list<StagedRow> */
     private array $buffer = [];
+
     private int $inserted = 0;
+
     private int $batchSize;
+
     private string $hashAlgo;
 
     public function __construct(
-        private readonly ExcelReaderDriver    $readerDriver,
-        private readonly ExcelRowRepository   $rowRepository,
+        private readonly ExcelReaderDriver $readerDriver,
+        private readonly ExcelRowRepository $rowRepository,
         private readonly ExcelSheetRepository $sheetRepository,
-    )
-    {
-        $this->batchSize = (int)config('excel-importer.insert_batch_size', 100);
+    ) {
+        $this->batchSize = (int) config('excel-importer.insert_batch_size', 100);
         $this->hashAlgo = config('excel-importer.hash_algo', 'sha256');
     }
 
@@ -42,7 +44,7 @@ final class RowExtractionService implements RowExtractorInterface
             $this->readerDriver->readRows(
                 $sheet->excelFile->path,
                 $sheet->sheet_index,
-                fn(array $row) => $this->bufferRow($row, $sheet)
+                fn (array $row) => $this->bufferRow($row, $sheet)
             );
 
             $this->flushBuffer();
@@ -92,7 +94,7 @@ final class RowExtractionService implements RowExtractorInterface
         if (empty($this->buffer)) {
             return;
         }
-        $data = array_map(fn(StagedRow $row) => $row->toArray(), $this->buffer);
+        $data = array_map(fn (StagedRow $row) => $row->toArray(), $this->buffer);
         $this->rowRepository->bulkUpsert($data);
         $this->inserted += count($this->buffer);
         $this->buffer = [];

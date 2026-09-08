@@ -3,8 +3,8 @@
 namespace Akbarjimi\ExcelImporter\Support;
 
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
-use Akbarjimi\ExcelImporter\Drivers\PhpSpreadsheetDriver;
 use Akbarjimi\ExcelImporter\Drivers\OpenSpoutDriver;
+use Akbarjimi\ExcelImporter\Drivers\PhpSpreadsheetDriver;
 use Akbarjimi\ExcelImporter\Exceptions\MissingDriverDependencyException;
 use Illuminate\Support\Manager;
 

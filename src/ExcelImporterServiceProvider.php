@@ -14,11 +14,9 @@ use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
 use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Events\FileProcessingCompleted;
 use Akbarjimi\ExcelImporter\Events\FileSheetsScanCompleted;
-use Akbarjimi\ExcelImporter\Events\SheetReadyForExtraction;
 use Akbarjimi\ExcelImporter\Listeners\HandleAllRowsExtracted;
 use Akbarjimi\ExcelImporter\Listeners\HandleExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Listeners\HandleFileSheetsScanCompleted;
-use Akbarjimi\ExcelImporter\Listeners\HandleSheetReadyForExtraction;
 use Akbarjimi\ExcelImporter\Listeners\InvokeImportHandler;
 use Akbarjimi\ExcelImporter\Services\ChunkerService;
 use Akbarjimi\ExcelImporter\Services\LocalFileResolver;
@@ -35,9 +33,9 @@ class ExcelImporterServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerEventListeners();
-        $this->loadMigrationsFrom(__DIR__ . '/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
         $this->publishes([
-            __DIR__ . '/config/excel-importer.php' => config_path('listener.php'),
+            __DIR__.'/config/excel-importer.php' => config_path('listener.php'),
         ], 'config');
 
     }
@@ -61,9 +59,9 @@ class ExcelImporterServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(
-            __DIR__ . '/config/excel-importer.php', 'excel-importer'
+            __DIR__.'/config/excel-importer.php', 'excel-importer'
         );
-        $this->loadFactoriesFrom(__DIR__ . '/database/factories');
+        $this->loadFactoriesFrom(__DIR__.'/database/factories');
 
     }
 
