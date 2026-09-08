@@ -52,6 +52,8 @@ class ExcelImporterServiceProvider extends ServiceProvider
 
         $this->app->bind(RowExtractionService::class);
 
+        $this->app->bind(LocalFileResolver::class);
+
         $this->app->singleton(ExcelReaderManager::class);
 
         $this->app->bind(ExcelReaderDriver::class, function ($app) {
