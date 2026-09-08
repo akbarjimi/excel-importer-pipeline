@@ -27,9 +27,11 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
     public int $timeout = 60;
 
     public function __construct(
-        private readonly ChunkerService $chunker,
-        private readonly ExcelFileRepository $fileRepo,
-    ) {}
+        private readonly ChunkerInterface    $chunker,
+        private readonly ExcelFileRepository $fileRepository,
+    )
+    {
+    }
 
     public function viaQueue(): string
     {
@@ -43,8 +45,8 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
 
     public function handle(AllRowsExtracted $event): void
     {
-        $file = $this->fileRepo->findFile($event->fileId, ['excelSheets']);
-        if (! $file || $file->trashed()) {
+        $file = $this->fileRepository->findFile($event->fileId, ['excelSheets']);
+        if (!$file || $file->trashed()) {
             $this->importLog(LogLevel::WARNING, "File {$event->fileId} has been deleted. Skipping further processing.");
 
             return;
@@ -54,47 +56,47 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
 
         if ($chunks->isEmpty()) {
             $this->importLog(LogLevel::WARNING, "No chunks created for file {$file->id} – marking as completed.");
-            $this->fileRepo->markAsCompleted($file->id);
+            $this->fileRepository->markAsCompleted($file->id);
             FileProcessingCompleted::dispatch($file->id);
 
             return;
         }
 
         $fileId = $file->id;
-        $this->fileRepo->markAsProcessing($fileId);
+        $this->fileRepository->markAsProcessing($fileId);
 
-        $jobs = $chunks->map(fn ($chunk) => new ProcessChunkJob($chunk->id))->all();
+        $jobs = $chunks->map(fn($chunk) => new ProcessChunkJob($chunk->id))->all();
 
         Bus::batch($jobs)
             ->name("excel-process:{$fileId}")
             ->onQueue(config('excel-importer.queue', 'default'))
             ->allowFailures(false)
             ->then(function (Batch $batch) use ($fileId) {
-                $this->fileRepo->markAsCompleted($fileId);
+                $this->fileRepository->markAsCompleted($fileId);
                 FileProcessingCompleted::dispatch($fileId);
                 $this->importLog(LogLevel::INFO, "Processing batch completed for file {$fileId}.", [
                     'batch_id' => $batch->id,
                 ]);
             })
             ->catch(function (Batch $batch, Throwable $e) use ($fileId) {
-                $this->fileRepo->markAsFailed($fileId, $e->getMessage());
+                $this->fileRepository->markAsFailed($fileId, $e->getMessage());
                 $this->importLog(LogLevel::CRITICAL, "Processing batch failed for file {$fileId}. Error: {$e->getMessage()}", [
                     'error' => $e->getMessage(),
                 ]);
             })
             ->finally(function (Batch $batch) use ($fileId) {
-                $this->fileRepo->recordBatchId($fileId, $batch->id);
+                $this->fileRepository->recordBatchId($fileId, $batch->id);
             })
             ->dispatch();
 
-        $this->importLog(LogLevel::INFO, "Chunk jobs batched for file {$fileId}. Count: ".count($jobs), [
+        $this->importLog(LogLevel::INFO, "Chunk jobs batched for file {$fileId}. Count: " . count($jobs), [
             'count' => count($jobs),
         ]);
     }
 
     public function failed(AllRowsExtracted $event, Throwable $e): void
     {
-        $this->fileRepo->markAsFailed($event->fileId, $e->getMessage());
+        $this->fileRepository->markAsFailed($event->fileId, $e->getMessage());
         $this->importLog(LogLevel::CRITICAL, "HandleAllRowsExtracted listener failed for file {$event->fileId}. Error: {$e->getMessage()}", [
             'error' => $e->getMessage(),
         ]);

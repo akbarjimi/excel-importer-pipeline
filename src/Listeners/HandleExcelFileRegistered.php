@@ -25,10 +25,12 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
     public int $backoff = 10;
 
     public function __construct(
-        private readonly SheetDiscoveryService $discovery,
-        private readonly ExcelFileRepository $fileRepo,
-        private readonly ExcelSheetRepository $sheetRepo,
-    ) {}
+        private readonly SheetDiscoveryService $discoveryService,
+        private readonly ExcelFileRepository   $fileRepository,
+        private readonly ExcelSheetRepository  $sheetRepository,
+    )
+    {
+    }
 
     public function viaQueue(): string
     {
@@ -42,7 +44,7 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
     public function handle(ExcelFileRegistered $event): void
     {
-        $file = $this->fileRepo->findFile($event->excelFileId);
+        $file = $this->fileRepository->findFile($event->excelFileId);
 
         if ($file === null) {
             $this->importLog(LogLevel::WARNING, "File {$event->excelFileId} not found.");
@@ -50,33 +52,33 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
             return;
         }
 
-        if ($this->sheetRepo->existsForFile($file->id)) {
+        if ($this->sheetRepository->existsForFile($file->id)) {
             $this->importLog(LogLevel::INFO, "Sheets already exist for file {$file->id}. Skipping discovery.");
             FileSheetsScanCompleted::dispatch($file->id);
 
             return;
         }
 
-        $this->fileRepo->markAsReading($file->id);
+        $this->fileRepository->markAsReading($file->id);
 
         try {
-            $sheets = $this->discovery->discover($file);
+            $sheets = $this->discoveryService->discover($file);
 
             if (empty($sheets)) {
                 $this->importLog(LogLevel::WARNING, "No sheets found for file {$file->id}.");
-                $this->fileRepo->markAsFailed($file->id, 'No sheets discovered');
+                $this->fileRepository->markAsFailed($file->id, 'No sheets discovered');
 
                 return;
             }
 
-            $this->sheetRepo->bulkCreate($file->id, $sheets);
-            $this->importLog(LogLevel::INFO, "Sheets discovered for file {$file->id}. Count: ".count($sheets), [
+            $this->sheetRepository->bulkCreate($file->id, $sheets);
+            $this->importLog(LogLevel::INFO, "Sheets discovered for file {$file->id}. Count: " . count($sheets), [
                 'count' => count($sheets),
             ]);
 
             FileSheetsScanCompleted::dispatch($file->id);
         } catch (Throwable $e) {
-            $this->fileRepo->markAsFailed($file->id, $e->getMessage());
+            $this->fileRepository->markAsFailed($file->id, $e->getMessage());
             $this->importLog(LogLevel::ERROR, "Sheet discovery failed for file {$file->id}. Error: {$e->getMessage()}", [
                 'error' => $e->getMessage(),
             ]);
@@ -86,7 +88,7 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
     public function failed(ExcelFileRegistered $event, Throwable $e): void
     {
-        $this->fileRepo->markAsFailed($event->excelFileId, $e->getMessage());
+        $this->fileRepository->markAsFailed($event->excelFileId, $e->getMessage());
         $this->importLog(LogLevel::CRITICAL, "Listener failed after retries for file {$event->excelFileId}. Error: {$e->getMessage()}", [
             'error' => $e->getMessage(),
         ]);

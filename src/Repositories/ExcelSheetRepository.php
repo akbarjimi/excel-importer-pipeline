@@ -59,17 +59,6 @@ final class ExcelSheetRepository
         return ExcelSheet::find($sheetId);
     }
 
-    public function transitionTo(int $sheetId, ExcelSheetStatus $newStatus): void
-    {
-        $sheet = ExcelSheet::findOrFail($sheetId);
-        if (!$sheet->status->canTransitionTo($newStatus)) {
-            throw new \RuntimeException(
-                "Invalid transition from {$sheet->status->value} to {$newStatus->value}"
-            );
-        }
-        $sheet->update(['status' => $newStatus->value]);
-    }
-
     public function incrementProcessedChunks(int $sheetId): int
     {
         return ExcelSheet::query()
@@ -106,5 +95,4 @@ final class ExcelSheetRepository
             'error' => $reason,
         ]);
     }
-
 }
