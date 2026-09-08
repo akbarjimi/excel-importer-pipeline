@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Repositories;
 
+use Akbarjimi\ExcelImporter\Concerns\HasStatusTransitions;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Exceptions\Sheet\EmptySheetException;
@@ -12,6 +13,8 @@ use Illuminate\Support\Collection;
 
 final class ExcelSheetRepository
 {
+    use HasStatusTransitions;
+
     public function bulkCreate(int $fileId, array $sheets): void
     {
         if (empty($sheets)) {
@@ -20,7 +23,7 @@ final class ExcelSheetRepository
 
         $now = now();
 
-        $rows = array_map(static fn (SheetInfo $sheet): array => [
+        $rows = array_map(static fn(SheetInfo $sheet): array => [
             'excel_file_id' => $fileId,
             'name' => $sheet->name,
             'sheet_index' => $sheet->index,
@@ -59,7 +62,7 @@ final class ExcelSheetRepository
     public function transitionTo(int $sheetId, ExcelSheetStatus $newStatus): void
     {
         $sheet = ExcelSheet::findOrFail($sheetId);
-        if (! $sheet->status->canTransitionTo($newStatus)) {
+        if (!$sheet->status->canTransitionTo($newStatus)) {
             throw new \RuntimeException(
                 "Invalid transition from {$sheet->status->value} to {$newStatus->value}"
             );
@@ -79,4 +82,29 @@ final class ExcelSheetRepository
     {
         ExcelSheet::query()->where('id', $sheetId)->update(['chunk_count' => $count]);
     }
+
+    public function markAsExtracted(int $sheetId): void
+    {
+        $this->markAs($sheetId, ExcelSheet::class, ExcelSheetStatus::EXTRACTED, [
+            'rows_extracted_at' => now(),
+        ]);
+    }
+
+    public function markAsChunksDispatched(int $sheetId): void
+    {
+        $this->markAs($sheetId, ExcelSheet::class, ExcelSheetStatus::CHUNKS_DISPATCHED);
+    }
+
+    public function markAsCompleted(int $sheetId): void
+    {
+        $this->markAs($sheetId, ExcelSheet::class, ExcelSheetStatus::COMPLETED);
+    }
+
+    public function markAsFailed(int $sheetId, string $reason): void
+    {
+        $this->markAs($sheetId, ExcelSheet::class, ExcelSheetStatus::FAILED, [
+            'error' => $reason,
+        ]);
+    }
+
 }
