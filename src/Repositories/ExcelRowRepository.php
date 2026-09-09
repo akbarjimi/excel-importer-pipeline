@@ -42,6 +42,19 @@ final class ExcelRowRepository
             ));
     }
 
+    /**
+     * Get rows with validation errors for a file.
+     * @return Collection<int, array{row: ExcelRow, errors: Collection<int, ExcelRowError>}>
+     */
+    public function getRowsWithErrors(int $fileId): Collection
+    {
+        return ExcelRow::with('errors')
+            ->whereHas('excelSheet', fn($q) => $q->where('excel_file_id', $fileId))
+            ->where('status', ExcelRowStatus::FAILED_VALIDATION)
+            ->get()
+            ->map(fn($row) => ['row' => $row, 'errors' => $row->errors]);
+    }
+
     public function chunkRowIdsBySheet(int $sheetId, int $chunkSize, callable $callback): void
     {
         ExcelRow::query()
