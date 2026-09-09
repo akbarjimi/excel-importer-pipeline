@@ -15,9 +15,7 @@ final class SheetDiscoveryService implements SheetDiscoveryInterface
         private readonly FilesystemFactory $storage,
         private readonly ExcelReaderDriver $readerDriver,
         private readonly LocalFileResolver $fileResolver,
-    )
-    {
-    }
+    ) {}
 
     public function discover(ExcelFile $file): array
     {

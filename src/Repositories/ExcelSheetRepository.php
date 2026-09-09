@@ -24,7 +24,7 @@ final class ExcelSheetRepository implements ExcelSheetRepositoryInterface
 
         $now = now();
 
-        $rows = array_map(static fn(SheetInfo $sheet): array => [
+        $rows = array_map(static fn (SheetInfo $sheet): array => [
             'excel_file_id' => $fileId,
             'name' => $sheet->name,
             'sheet_index' => $sheet->index,

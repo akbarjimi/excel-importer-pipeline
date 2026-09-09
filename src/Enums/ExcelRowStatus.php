@@ -21,6 +21,6 @@ enum ExcelRowStatus: string
             self::VALIDATING => in_array($new, [self::VALIDATED, self::FAILED_VALIDATION, self::FAILED]),
             self::VALIDATED => in_array($new, [self::PROCESSED, self::FAILED]),
             self::FAILED_VALIDATION, self::PROCESSED, self::FAILED => false,
-            };
+        };
     }
 }

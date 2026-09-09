@@ -10,7 +10,7 @@ final class ErrorReportService
     public function getBrokenRows(int $fileId, int $perPage = 50): LengthAwarePaginator
     {
         return ExcelRow::with('errors')
-            ->whereHas('excelSheet', fn($q) => $q->where('excel_file_id', $fileId))
+            ->whereHas('excelSheet', fn ($q) => $q->where('excel_file_id', $fileId))
             ->where('status', ExcelRowStatus::FAILED_VALIDATION)
             ->paginate($perPage);
     }

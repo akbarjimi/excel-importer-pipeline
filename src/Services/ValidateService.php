@@ -20,9 +20,11 @@ final class ValidateService implements ValidatorInterface
             if ($this->config->get('excel-importer.strict_validation', false)) {
                 throw new \RuntimeException("No validation rules for sheet [{$sheet->name}].");
             }
+
             return [];
         }
         $validator = Validator::make($payload, $rules);
+
         return $validator->fails() ? $validator->errors()->toArray() : [];
     }
 }

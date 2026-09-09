@@ -24,9 +24,10 @@ final class TransformService
         $transformerClass = $sheetConfig['transformer'] ?? null;
         if ($transformerClass && class_exists($transformerClass)) {
             $transformer = $this->app->make($transformerClass);
-            if (!$transformer instanceof TransformerInterface) {
-                throw new \RuntimeException('Transformer must implement ' . TransformerInterface::class);
+            if (! $transformer instanceof TransformerInterface) {
+                throw new \RuntimeException('Transformer must implement '.TransformerInterface::class);
             }
+
             return $transformer->transform($mappedRow, $sheet);
         }
 
@@ -39,6 +40,7 @@ final class TransformService
         foreach ($mapping as $targetKey => $sourceKey) {
             $mapped[$targetKey] = $rawRow[$sourceKey] ?? null;
         }
+
         return empty($mapping) ? $rawRow : $mapped;
     }
 }
