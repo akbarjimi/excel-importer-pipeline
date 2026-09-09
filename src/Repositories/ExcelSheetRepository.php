@@ -9,9 +9,10 @@ use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Exceptions\Sheet\EmptySheetException;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
+use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelSheetRepositoryInterface;
 use Illuminate\Support\Collection;
 
-final class ExcelSheetRepository
+final class ExcelSheetRepository implements ExcelSheetRepositoryInterface
 {
     use HasStatusTransitions;
 
@@ -23,7 +24,7 @@ final class ExcelSheetRepository
 
         $now = now();
 
-        $rows = array_map(static fn (SheetInfo $sheet): array => [
+        $rows = array_map(static fn(SheetInfo $sheet): array => [
             'excel_file_id' => $fileId,
             'name' => $sheet->name,
             'sheet_index' => $sheet->index,
@@ -70,6 +71,16 @@ final class ExcelSheetRepository
     public function setChunkCount(int $sheetId, int $count): void
     {
         ExcelSheet::query()->where('id', $sheetId)->update(['chunk_count' => $count]);
+    }
+
+    public function markAsPending(int $sheetId): void
+    {
+        $this->markAs($sheetId, ExcelSheet::class, ExcelSheetStatus::PENDING);
+    }
+
+    public function markAsExtracting(int $sheetId): void
+    {
+        $this->markAs($sheetId, ExcelSheet::class, ExcelSheetStatus::EXTRACTING);
     }
 
     public function markAsExtracted(int $sheetId): void
