@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Repositories;
 
+use Akbarjimi\ExcelImporter\Concerns\HasStatusTransitions;
 use Akbarjimi\ExcelImporter\DTOs\ValidatedRow;
 use Akbarjimi\ExcelImporter\Enums\ExcelRowStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
@@ -12,12 +13,14 @@ use Illuminate\Support\LazyCollection;
 
 final class ExcelRowRepository
 {
+    use HasStatusTransitions;
+
     public function bulkUpsert(array $rows, int $chunkSize = 500): void
     {
         collect($rows)
             ->chunk($chunkSize)
             ->each(function ($chunk) {
-                $sanitized = $chunk->map(fn ($row) => array_diff_key($row, ['id' => null]))->all();
+                $sanitized = $chunk->map(fn($row) => array_diff_key($row, ['id' => null]))->all();
                 DB::table('excel_rows')->upsert(
                     $sanitized,
                     ['excel_sheet_id', 'content_hash', 'hash_algo'],
@@ -29,24 +32,56 @@ final class ExcelRowRepository
     public function getValidatedRowsForFile(int $fileId): LazyCollection
     {
         return ExcelRow::query()
-            ->whereHas('excelSheet', fn ($q) => $q->where('excel_file_id', $fileId))
+            ->whereHas('excelSheet', fn($q) => $q->where('excel_file_id', $fileId))
             ->where('status', ExcelRowStatus::VALIDATED->value)
             ->orderBy('id')
             ->lazy()
-            ->map(fn (ExcelRow $row) => new ValidatedRow(
+            ->map(fn(ExcelRow $row) => new ValidatedRow(
                 rowIndex: $row->row_index,
                 data: $row->content,
             ));
     }
 
-    public function transitionTo(int $rowId, ExcelRowStatus $newStatus): void
+    public function chunkRowIdsBySheet(int $sheetId, int $chunkSize, callable $callback): void
     {
-        $row = ExcelRow::findOrFail($rowId);
-        if (! $row->status->canTransitionTo($newStatus)) {
-            throw new \RuntimeException(
-                "Invalid transition from {$row->status->value} to {$newStatus->value}"
-            );
-        }
-        $row->update(['status' => $newStatus->value]);
+        ExcelRow::query()
+            ->where('excel_sheet_id', $sheetId)
+            ->orderBy('id')
+            ->select('id')
+            ->chunk($chunkSize, function ($rows) use ($callback) {
+                $idChunk = $rows->pluck('id');
+                $callback($idChunk);
+            });
     }
+
+    public function markAsPending(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::PENDING);
+    }
+
+    public function markAsValidating(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::VALIDATING);
+    }
+
+    public function markAsValidated(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::VALIDATED);
+    }
+
+    public function markAsFailedValidation(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::FAILED_VALIDATION);
+    }
+
+    public function markAsProcessed(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::PROCESSED);
+    }
+
+    public function markAsFailed(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::FAILED);
+    }
+
 }

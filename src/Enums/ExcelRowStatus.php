@@ -11,6 +11,7 @@ enum ExcelRowStatus: string
     case VALIDATED = 'validated';
     case FAILED_VALIDATION = 'failed_validation';
     case PROCESSED = 'processed';
+
     case FAILED = 'failed';
 
     public function canTransitionTo(self $new): bool
@@ -20,6 +21,6 @@ enum ExcelRowStatus: string
             self::VALIDATING => in_array($new, [self::VALIDATED, self::FAILED_VALIDATION, self::FAILED]),
             self::VALIDATED => in_array($new, [self::PROCESSED, self::FAILED]),
             self::FAILED_VALIDATION, self::PROCESSED, self::FAILED => false,
-        };
+            };
     }
 }
