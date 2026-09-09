@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Repositories;
 
+use Akbarjimi\ExcelImporter\Concerns\HasStatusTransitions;
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelFileRepositoryInterface;
 
-final class ExcelFileRepository
+final class ExcelFileRepository implements ExcelFileRepositoryInterface
 {
+    use HasStatusTransitions;
+
     public function findFile(int $fileId, array $relations = []): ?ExcelFile
     {
         return ExcelFile::query()->with($relations)->find($fileId);
@@ -16,36 +20,43 @@ final class ExcelFileRepository
 
     public function create(array $data): ExcelFile
     {
-        if (! isset($data['status'])) {
+        if (!isset($data['status'])) {
             $data['status'] = ExcelFileStatus::PENDING->value;
         }
 
         return ExcelFile::create($data);
     }
 
-    public function transitionTo(int $fileId, ExcelFileStatus $newStatus, array $extra = []): void
+    public function markAsPending(int $fileId): void
     {
-        $file = ExcelFile::findOrFail($fileId);
-        if (! $file->status->canTransitionTo($newStatus)) {
-            throw new \RuntimeException(
-                "Invalid status transition from {$file->status->value} to {$newStatus->value}"
-            );
-        }
-
-        $data = ['status' => $newStatus->value] + $extra;
-        $file->update($data);
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::PENDING);
     }
 
     public function markAsReading(int $fileId): void
     {
-        $this->transitionTo($fileId, ExcelFileStatus::READING);
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::READING);
+    }
+
+    public function markAsRowsExtracting(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::ROWS_EXTRACTING);
     }
 
     public function markAsRowsExtracted(int $fileId): void
     {
-        $this->transitionTo($fileId, ExcelFileStatus::ROWS_EXTRACTED, [
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::ROWS_EXTRACTED, [
             'rows_extracted_at' => now(),
         ]);
+    }
+
+    public function markAsProcessing(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::PROCESSING);
+    }
+
+    public function markAsCompleted(int $fileId): void
+    {
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::COMPLETED);
     }
 
     public function markAsFailed(int $fileId, ?string $reason = null): void
@@ -54,17 +65,7 @@ final class ExcelFileRepository
         if ($reason !== null) {
             $extra['error'] = $reason;
         }
-        $this->transitionTo($fileId, ExcelFileStatus::FAILED, $extra);
-    }
-
-    public function markAsProcessing(int $fileId): void
-    {
-        $this->transitionTo($fileId, ExcelFileStatus::PROCESSING);
-    }
-
-    public function markAsCompleted(int $fileId): void
-    {
-        $this->transitionTo($fileId, ExcelFileStatus::COMPLETED, ['completed_at' => now()]);
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::FAILED, $extra);
     }
 
     public function getHandler(int $fileId): ?string
