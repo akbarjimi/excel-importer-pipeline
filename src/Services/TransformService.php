@@ -4,22 +4,41 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Services;
 
+use Akbarjimi\ExcelImporter\Contracts\TransformerInterface;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Contracts\Config\Repository as Config;
 
 final class TransformService
 {
-    public function __construct(private Config $config) {}
+    public function __construct(
+        private Config $config,
+        private Application $app,
+    ) {}
 
-    public function apply(array $row, ExcelSheet $sheet): array
+    public function apply(array $rawRow, ExcelSheet $sheet): array
     {
-        $transformers = $this->config->get("excel-importer-sheets.{$sheet->name}.transformers", []);
-        foreach ($row as $column => $value) {
-            if (isset($transformers[$column]) && is_callable($transformers[$column])) {
-                $row[$column] = $transformers[$column]($value);
+        $sheetConfig = $this->config->get("excel-importer-sheets.{$sheet->name}", []);
+
+        $mappedRow = $this->applyMapping($rawRow, $sheetConfig['mapping'] ?? []);
+
+        $transformerClass = $sheetConfig['transformer'] ?? null;
+        if ($transformerClass && class_exists($transformerClass)) {
+            $transformer = $this->app->make($transformerClass);
+            if (!$transformer instanceof TransformerInterface) {
+                throw new \RuntimeException('Transformer must implement ' . TransformerInterface::class);
             }
+            return $transformer->transform($mappedRow, $sheet);
         }
 
-        return $row;
+        return $mappedRow;
+    }
+
+    private function applyMapping(array $rawRow, array $mapping): array
+    {
+        $mapped = [];
+        foreach ($mapping as $targetKey => $sourceKey) {
+            $mapped[$targetKey] = $rawRow[$sourceKey] ?? null;
+        }
+        return empty($mapping) ? $rawRow : $mapped;
     }
 }
