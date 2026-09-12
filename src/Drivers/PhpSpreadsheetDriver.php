@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Akbarjimi\ExcelImporter\Drivers;
 
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
+use Akbarjimi\ExcelImporter\Contracts\RowHandler;
 use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 final class PhpSpreadsheetDriver implements ExcelReaderDriver
 {
-    public function readRows(string $filePath, int $sheetIndex, callable $callback): void
+    public function readRows(string $filePath, int $sheetIndex, RowHandler $handler): void
     {
         $reader = IOFactory::createReaderForFile($filePath);
         $spreadsheet = $reader->load($filePath);
@@ -22,7 +23,7 @@ final class PhpSpreadsheetDriver implements ExcelReaderDriver
             foreach ($row->getCellIterator() as $cell) {
                 $cells[] = $cell->getFormattedValue();
             }
-            $callback(new RowData($cells, $rowNumber - 1)); // 0-based
+            $handler->handle(new RowData($cells, $rowNumber - 1));
         }
 
         $spreadsheet->disconnect();

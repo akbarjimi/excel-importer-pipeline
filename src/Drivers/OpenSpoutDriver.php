@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Akbarjimi\ExcelImporter\Drivers;
 
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
+use Akbarjimi\ExcelImporter\Contracts\RowHandler;
 use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 use OpenSpout\Reader\XLSX\Reader;
 
 final class OpenSpoutDriver implements ExcelReaderDriver
 {
-    public function readRows(string $filePath, int $sheetIndex, callable $callback): void
+    public function readRows(string $filePath, int $sheetIndex, RowHandler $handler): void
     {
         if (! is_file($filePath)) {
             throw new \InvalidArgumentException("File not found: {$filePath}");
@@ -27,7 +28,7 @@ final class OpenSpoutDriver implements ExcelReaderDriver
                 }
 
                 foreach ($sheet->getRowIterator() as $rowNumber => $row) {
-                    $callback(new RowData(
+                    $handler->handle(new RowData(
                         cells: $this->normalizeRow($row->toArray()),
                         rowNumber: $rowNumber - 1,
                     ));
@@ -69,10 +70,6 @@ final class OpenSpoutDriver implements ExcelReaderDriver
         }
     }
 
-    /**
-     * Normalize cell values so all drivers produce identical payloads.
-     * Critical for cross-driver parity and row hashing.
-     */
     private function normalizeRow(array $cells): array
     {
         return array_map(

@@ -8,5 +8,5 @@ use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 
 interface RowExtractorInterface
 {
-    public function extract(ExcelSheet $sheet): int;
+    public function extract(ExcelSheet $sheet): void;
 }
