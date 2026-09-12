@@ -7,6 +7,7 @@ namespace Akbarjimi\ExcelImporter\Services;
 use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
 use Akbarjimi\ExcelImporter\Contracts\RowExtractorInterface;
+use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\StagedRow;
 use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
@@ -44,7 +45,7 @@ final class RowExtractionService implements RowExtractorInterface
             $this->readerDriver->readRows(
                 $sheet->excelFile->path,
                 $sheet->sheet_index,
-                fn (array $row) => $this->bufferRow($row, $sheet)
+                fn (RowData $row) => $this->bufferRow($row, $sheet)
             );
 
             $this->flushBuffer();
@@ -72,7 +73,7 @@ final class RowExtractionService implements RowExtractorInterface
         $this->buffer = [];
     }
 
-    private function bufferRow(array $row, ExcelSheet $sheet): void
+    private function bufferRow(RowData $row, ExcelSheet $sheet): void
     {
         $encoded = json_encode($row, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         $this->buffer[] = new StagedRow(
