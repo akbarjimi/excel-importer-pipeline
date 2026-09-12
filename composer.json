@@ -1,15 +1,18 @@
 {
   "name": "akbarjimi/laravel-excel-importer",
-  "description": "Distributed, event-driven, queue-based Excel importer for Laravel 12 with pluggable engines, validation and transformation.",
+  "description": "Distributed, event-driven, queue-based Excel importer for Laravel with pluggable drivers, validation, transformation, and row-level error recovery.",
+  "keywords": ["laravel", "excel", "import", "queue", "batch", "xlsx", "openspout", "phpspreadsheet"],
   "type": "library",
   "license": "MIT",
   "require": {
     "php": "^8.1",
-    "illuminate/support": "^10.0|^11.0|^12.0"
-  },
-  "suggest": {
-    "maatwebsite/excel": "Required to use the maatwebsite reader driver (^3.1)",
-    "openspout/openspout": "Required to use the openspout reader driver (^4.24)"
+    "illuminate/support": "^10.0|^11.0|^12.0",
+    "illuminate/database": "^10.0|^11.0|^12.0",
+    "illuminate/queue": "^10.0|^11.0|^12.0",
+    "illuminate/bus": "^10.0|^11.0|^12.0",
+    "illuminate/events": "^10.0|^11.0|^12.0",
+    "illuminate/filesystem": "^10.0|^11.0|^12.0",
+    "illuminate/console": "^10.0|^11.0|^12.0"
   },
   "require-dev": {
     "orchestra/testbench": "^8.0|^9.0|^10.0",
@@ -20,10 +23,13 @@
     "openspout/openspout": "^4.0",
     "maatwebsite/excel": "^3.1"
   },
+  "suggest": {
+    "maatwebsite/excel": "Required to use the phpspreadsheet reader driver (^3.1)",
+    "openspout/openspout": "Required to use the openspout reader driver (^4.24)"
+  },
   "autoload": {
     "psr-4": {
-      "Akbarjimi\\ExcelImporter\\": "src/",
-      "Akbarjimi\\ExcelImporter\\Database\\Factories\\": "src/database/factories"
+      "Akbarjimi\\ExcelImporter\\": "src/"
     }
   },
   "autoload-dev": {
@@ -51,5 +57,7 @@
         "Akbarjimi\\ExcelImporter\\ExcelImporterServiceProvider"
       ]
     }
-  }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }
