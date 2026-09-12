@@ -60,14 +60,6 @@ final class ExcelSheetRepository implements ExcelSheetRepositoryInterface
         return ExcelSheet::find($sheetId);
     }
 
-    public function incrementProcessedChunks(int $sheetId): int
-    {
-        return ExcelSheet::query()
-            ->where('id', $sheetId)
-            ->whereColumn('processed_chunks', '<', 'chunk_count')
-            ->increment('processed_chunks');
-    }
-
     public function setChunkCount(int $sheetId, int $count): void
     {
         ExcelSheet::query()->where('id', $sheetId)->update(['chunk_count' => $count]);
