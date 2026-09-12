@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Akbarjimi\ExcelImporter\Database\Factories;
 
+use Akbarjimi\ExcelImporter\Enums\ExcelChunkStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelRowChunk;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -17,8 +20,7 @@ class ExcelRowChunkFactory extends Factory
             'from_row_id' => 1,
             'to_row_id' => 3,
             'size' => 3,
-            'status' => 'pending',
-            'mapping_status' => 'pending',
+            'status' => ExcelChunkStatus::PENDING->value,
             'attempts' => 0,
             'error' => null,
             'dispatched_at' => null,
