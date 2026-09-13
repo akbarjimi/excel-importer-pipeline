@@ -7,7 +7,6 @@ namespace Akbarjimi\ExcelImporter\Services;
 use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Contracts\ChunkerInterface;
 use Akbarjimi\ExcelImporter\Enums\ExcelChunkStatus;
-use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
@@ -22,11 +21,13 @@ final class ChunkerService implements ChunkerInterface
     use LogsImportActivity;
 
     public function __construct(
-        private readonly int $chunkSize,
-        private readonly ExcelRowRepository $rowRepo,
+        private readonly int                     $chunkSize,
+        private readonly ExcelRowRepository      $rowRepo,
         private readonly ExcelRowChunkRepository $chunkRepo,
-        private readonly ExcelSheetRepository $sheetRepo,
-    ) {}
+        private readonly ExcelSheetRepository    $sheetRepo,
+    )
+    {
+    }
 
     public function createChunksForFile(ExcelFile $file): Collection
     {
@@ -62,7 +63,7 @@ final class ChunkerService implements ChunkerInterface
                     'from_row_id' => $idChunk->first(),
                     'to_row_id' => $idChunk->last(),
                     'size' => $idChunk->count(),
-                    'status' => ExcelChunkStatus::PENDING,
+                    'status' => ExcelChunkStatus::PENDING->value,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
@@ -75,7 +76,7 @@ final class ChunkerService implements ChunkerInterface
 
         $chunks = $this->chunkRepo->insertMany($chunkData);
 
-        $this->sheetRepo->transitionTo($sheetId, ExcelSheetStatus::CHUNKS_DISPATCHED);
+        $this->sheetRepo->markAsChunksDispatched($sheetId);
 
         return $chunks;
     }
