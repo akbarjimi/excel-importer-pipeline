@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter;
 
-use Akbarjimi\ExcelImporter\Contracts\ChunkerInterface;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
-use Akbarjimi\ExcelImporter\Contracts\RowExtractorInterface;
-use Akbarjimi\ExcelImporter\Contracts\SheetDiscoveryInterface;
-use Akbarjimi\ExcelImporter\Contracts\TransformerInterface;
-use Akbarjimi\ExcelImporter\Contracts\ValidatorInterface;
 use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
 use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Events\FileProcessingCompleted;
@@ -18,12 +13,12 @@ use Akbarjimi\ExcelImporter\Listeners\HandleAllRowsExtracted;
 use Akbarjimi\ExcelImporter\Listeners\HandleExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Listeners\HandleFileSheetsScanCompleted;
 use Akbarjimi\ExcelImporter\Listeners\InvokeImportHandler;
+use Akbarjimi\ExcelImporter\Repositories\ExcelRowChunkRepository;
 use Akbarjimi\ExcelImporter\Services\ChunkerService;
 use Akbarjimi\ExcelImporter\Services\LocalFileResolver;
 use Akbarjimi\ExcelImporter\Services\RowExtractionService;
-use Akbarjimi\ExcelImporter\Services\SheetDiscoveryService;
-use Akbarjimi\ExcelImporter\Services\TransformService;
-use Akbarjimi\ExcelImporter\Services\ValidateService;
+use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
+use Akbarjimi\ExcelImporter\Repositories\ExcelSheetRepository;
 use Akbarjimi\ExcelImporter\Support\ExcelReaderManager;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -35,34 +30,39 @@ class ExcelImporterServiceProvider extends ServiceProvider
         $this->registerEventListeners();
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
         $this->publishes([
-            __DIR__.'/config/excel-importer.php' => config_path('listener.php'),
-        ], 'config');
-
+            __DIR__.'/config/excel-importer.php' => config_path('excel-importer.php'),
+        ], 'excel-importer');
+        $this->publishes([
+            __DIR__.'/config/excel-importer-sheets.php' => config_path('excel-importer-sheets.php'),
+        ], 'excel-importer-sheets');
     }
 
-    public function register()
+    public function register(): void
     {
-        $this->app->bind(SheetDiscoveryInterface::class, SheetDiscoveryService::class);
-        $this->app->bind(RowExtractorInterface::class, RowExtractionService::class);
-        $this->app->bind(ChunkerInterface::class, ChunkerService::class);
-        $this->app->bind(TransformerInterface::class, TransformService::class);
-        $this->app->bind(ValidatorInterface::class, ValidateService::class);
+        $this->mergeConfigFrom(__DIR__.'/config/excel-importer.php', 'excel-importer');
+        $this->loadFactoriesFrom(__DIR__.'/database/factories');
 
-        $this->app->bind(RowExtractionService::class);
+        $this->app->singleton(ExcelReaderManager::class);
+        $this->app->bind(ExcelReaderDriver::class, fn ($app) => $app->make(ExcelReaderManager::class)->driver());
+
+        $this->app->bind(RowExtractionService::class, function ($app) {
+            return new RowExtractionService(
+                $app->make(ExcelReaderDriver::class),
+                $app->make(ExcelRowRepository::class),
+                $app->make(ExcelSheetRepository::class),
+                (int) config('excel-importer.insert_batch_size', 100),
+                (string) config('excel-importer.hash_algo', 'sha256'),
+            );
+        });
 
         $this->app->bind(LocalFileResolver::class);
 
-        $this->app->singleton(ExcelReaderManager::class);
-
-        $this->app->bind(ExcelReaderDriver::class, function ($app) {
-            return $app->make(ExcelReaderManager::class)->driver();
-        });
-
-        $this->mergeConfigFrom(
-            __DIR__.'/config/excel-importer.php', 'excel-importer'
-        );
-        $this->loadFactoriesFrom(__DIR__.'/database/factories');
-
+        $this->app->bind(ChunkerService::class, fn ($app) => new ChunkerService(
+            (int) config('excel-importer.chunk_size', 1000),
+            $app->make(ExcelRowRepository::class),
+            $app->make(ExcelRowChunkRepository::class),
+            $app->make(ExcelSheetRepository::class),
+        ));
     }
 
     public function registerEventListeners(): void
