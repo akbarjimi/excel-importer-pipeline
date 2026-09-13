@@ -38,6 +38,11 @@ final class ExcelRow extends Model
         return $this->belongsTo(ExcelSheet::class)->withTrashed();
     }
 
+    public function errors(): HasMany
+    {
+        return $this->hasMany(ExcelRowError::class, 'excel_row_id');
+    }
+
     protected static function newFactory(): ExcelRowFactory
     {
         return ExcelRowFactory::new();
