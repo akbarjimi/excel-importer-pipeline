@@ -41,18 +41,23 @@ final class TransformService
         return $transformer->transform($mappedRow, $sheet);
     }
 
-    /**
-     * @param  array<string, string>  $mapping  target key => source key (e.g. 'name' => 'A1')
-     */
     private function applyMapping(array $rawRow, array $mapping): array
     {
         if ($mapping === []) {
-            return $rawRow;
+            return array_filter(
+                $rawRow,
+                static fn (string|int $key): bool => ! is_string($key) || ! str_starts_with($key, '_'),
+                ARRAY_FILTER_USE_KEY,
+            );
         }
 
         $mapped = [];
 
         foreach ($mapping as $targetKey => $sourceKey) {
+            if (str_starts_with((string) $targetKey, '_')) {
+                continue;
+            }
+
             $mapped[$targetKey] = $rawRow[$sourceKey] ?? null;
         }
 
