@@ -25,7 +25,8 @@ class ExcelRowFactory extends Factory
             'excel_sheet_id' => ExcelSheet::factory(),
             'row_index' => $this->faker->unique()->numberBetween(1, 1000000),
             'content' => $content,
-            'content_hash' => md5($encoded),
+            'hash_algo' => 'sha256',
+            'content_hash' => hash('sha256', $encoded),
             'status' => ExcelRowStatus::PENDING,
             'chunk_index' => $this->faker->numberBetween(0, 5),
         ];
@@ -33,6 +34,6 @@ class ExcelRowFactory extends Factory
 
     public function withSheet(ExcelSheet $sheet): static
     {
-        return $this->state(fn () => ['excel_sheet_id' => $sheet->id]);
+        return $this->state(fn() => ['excel_sheet_id' => $sheet->id]);
     }
 }
