@@ -7,12 +7,8 @@ namespace Akbarjimi\ExcelImporter\Services;
 use Akbarjimi\ExcelImporter\Contracts\RowHandler;
 use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\StagedRow;
-use Akbarjimi\ExcelImporter\Models\ExcelSheet;
-use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelRowRepositoryInterface;
+use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
 
-/**
- * Stateful, per-sheet buffer. Do not inject as a singleton.
- */
 final class SheetRowBuffer implements RowHandler
 {
     /** @var list<StagedRow> */
@@ -21,8 +17,8 @@ final class SheetRowBuffer implements RowHandler
     private int $inserted = 0;
 
     public function __construct(
-        private readonly ExcelSheet $sheet,
-        private readonly ExcelRowRepositoryInterface $rowRepository,
+        private readonly int $sheetId,
+        private readonly ExcelRowRepository $rowRepository,
         private readonly string $hashAlgo,
         private readonly int $batchSize,
     ) {}
@@ -32,7 +28,8 @@ final class SheetRowBuffer implements RowHandler
         $encoded = json_encode($row->cells, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
 
         $this->buffer[] = new StagedRow(
-            sheetId: $this->sheet->id,
+            sheetId: $this->sheetId,
+            rowIndex: $row->rowNumber,
             content: $encoded,
             hashAlgo: $this->hashAlgo,
             contentHash: hash($this->hashAlgo, $encoded),
