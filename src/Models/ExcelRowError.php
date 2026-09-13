@@ -7,6 +7,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 final class ExcelRowError extends Model implements Arrayable
 {
@@ -30,6 +31,18 @@ final class ExcelRowError extends Model implements Arrayable
     public function excelRow(): BelongsTo
     {
         return $this->belongsTo(ExcelRow::class, 'excel_row_id');
+    }
+
+    public function excelSheet(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            ExcelSheet::class,
+            ExcelRow::class,
+            'id',
+            'id',
+            'excel_row_id',
+            'excel_sheet_id',
+        );
     }
 
     public function toArray(): array
