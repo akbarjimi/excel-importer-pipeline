@@ -24,9 +24,18 @@ final class ExcelRowRepository
                 DB::table('excel_rows')->upsert(
                     $sanitized,
                     ['excel_sheet_id', 'content_hash', 'hash_algo'],
-                    ['content', 'status', 'row_index', 'updated_at']
+                    ['content', 'status', 'row_index', 'updated_at'],
                 );
             });
+    }
+
+    public function getRowsBetween(int $sheetId, int $fromRowId, int $toRowId): LazyCollection
+    {
+        return ExcelRow::query()
+            ->where('excel_sheet_id', $sheetId)
+            ->whereBetween('id', [$fromRowId, $toRowId])
+            ->orderBy('id')
+            ->lazy();
     }
 
     public function getValidatedRowsForFile(int $fileId): LazyCollection
@@ -42,20 +51,6 @@ final class ExcelRowRepository
             ));
     }
 
-    /**
-     * Get rows with validation errors for a file.
-     *
-     * @return Collection<int, array{row: ExcelRow, errors: Collection<int, ExcelRowError>}>
-     */
-    public function getRowsWithErrors(int $fileId): Collection
-    {
-        return ExcelRow::with('errors')
-            ->whereHas('excelSheet', fn ($q) => $q->where('excel_file_id', $fileId))
-            ->where('status', ExcelRowStatus::FAILED_VALIDATION)
-            ->get()
-            ->map(fn ($row) => ['row' => $row, 'errors' => $row->errors]);
-    }
-
     public function chunkRowIdsBySheet(int $sheetId, int $chunkSize, callable $callback): void
     {
         ExcelRow::query()
@@ -63,38 +58,37 @@ final class ExcelRowRepository
             ->orderBy('id')
             ->select('id')
             ->chunk($chunkSize, function ($rows) use ($callback) {
-                $idChunk = $rows->pluck('id');
-                $callback($idChunk);
+                $callback($rows->pluck('id'));
             });
     }
 
-    public function markAsPending(int $fileId): void
+    public function markAsPending(int $rowId): void
     {
-        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::PENDING);
+        $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::PENDING);
     }
 
-    public function markAsValidating(int $fileId): void
+    public function markAsValidating(int $rowId): void
     {
-        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::VALIDATING);
+        $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::VALIDATING);
     }
 
-    public function markAsValidated(int $fileId): void
+    public function markAsValidated(int $rowId): void
     {
-        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::VALIDATED);
+        $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::VALIDATED);
     }
 
-    public function markAsFailedValidation(int $fileId): void
+    public function markAsFailedValidation(int $rowId): void
     {
-        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::FAILED_VALIDATION);
+        $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::FAILED_VALIDATION);
     }
 
-    public function markAsProcessed(int $fileId): void
+    public function markAsProcessed(int $rowId): void
     {
-        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::PROCESSED);
+        $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::PROCESSED);
     }
 
-    public function markAsFailed(int $fileId): void
+    public function markAsFailed(int $rowId): void
     {
-        $this->markAs($fileId, ExcelRow::class, ExcelRowStatus::FAILED);
+        $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::FAILED);
     }
 }
