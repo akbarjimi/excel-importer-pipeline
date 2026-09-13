@@ -81,8 +81,22 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
         Bus::batch($jobs)
             ->name("excel-process:{$fileId}")
             ->onQueue(config('excel-importer.queue', 'default'))
-            ->allowFailures(false)
+            ->allowFailures(true)
             ->then(function (Batch $batch) use ($fileId) {
+                if ($batch->failedJobs > 0) {
+                    $this->fileRepository->markAsFailed(
+                        $fileId,
+                        "{$batch->failedJobs} chunks failed. Retry with: php artisan excel:retry {$fileId}",
+                    );
+
+                    $this->importLog(LogLevel::CRITICAL, "Processing batch completed with failures for file {$fileId}.", [
+                        'batch_id' => $batch->id,
+                        'failed_jobs' => $batch->failedJobs,
+                    ]);
+
+                    return;
+                }
+
                 $this->fileRepository->markAsCompleted($fileId);
                 FileProcessingCompleted::dispatch($fileId);
 
@@ -93,9 +107,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
             ->catch(function (Batch $batch, Throwable $e) use ($fileId) {
                 $this->fileRepository->markAsFailed($fileId, $e->getMessage());
 
-                $this->importLog(LogLevel::CRITICAL, "Processing batch failed for file {$fileId}. Error: {$e->getMessage()}", [
-                    'error' => $e->getMessage(),
-                ]);
+                $this->importLog(LogLevel::CRITICAL, "Processing batch failed for file {$fileId}. Error: {$e->getMessage()}");
             })
             ->finally(function (Batch $batch) use ($fileId) {
                 $this->fileRepository->recordBatchId($fileId, $batch->id);
