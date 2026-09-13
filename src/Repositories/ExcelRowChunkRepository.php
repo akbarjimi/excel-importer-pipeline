@@ -21,20 +21,26 @@ final class ExcelRowChunkRepository
 
     public function insertMany(array $data): Collection
     {
-        if (empty($data)) {
+        if ($data === []) {
             return collect();
         }
 
         ExcelRowChunk::insert($data);
 
         $sheetId = $data[0]['excel_sheet_id'];
-        $fromIds = array_column($data, 'from_row_id');
-        $toIds = array_column($data, 'to_row_id');
+
+        $pairs = array_map(
+            static fn (array $row): array => [$row['from_row_id'], $row['to_row_id']],
+            $data,
+        );
 
         return ExcelRowChunk::query()
             ->where('excel_sheet_id', $sheetId)
-            ->whereIn('from_row_id', $fromIds)
-            ->whereIn('to_row_id', $toIds)
+            ->where(function ($q) use ($pairs) {
+                foreach ($pairs as [$from, $to]) {
+                    $q->orWhere(fn ($sub) => $sub->where('from_row_id', $from)->where('to_row_id', $to));
+                }
+            })
             ->get();
     }
 
