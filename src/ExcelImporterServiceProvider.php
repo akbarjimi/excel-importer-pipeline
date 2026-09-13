@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter;
 
+use Akbarjimi\ExcelImporter\Console\Commands\RetryCommand;
+use Akbarjimi\ExcelImporter\Console\Commands\StatusCommand;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
 use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
 use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
@@ -35,6 +37,12 @@ class ExcelImporterServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/config/excel-importer-sheets.php' => config_path('excel-importer-sheets.php'),
         ], 'excel-importer-sheets');
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                StatusCommand::class,
+                RetryCommand::class,
+            ]);
+        }
     }
 
     public function register(): void
