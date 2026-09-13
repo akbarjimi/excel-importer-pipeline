@@ -46,7 +46,9 @@ final class ExcelRowChunkRepository
 
     public function markAsPending(int $chunkId): void
     {
-        $this->markAs($chunkId, ExcelRowChunk::class, ExcelChunkStatus::PENDING);
+        $this->markAs($chunkId, ExcelRowChunk::class, ExcelChunkStatus::PENDING, [
+            'error' => null,
+        ]);
     }
 
     public function markManyAsPending(array $chunkIds): int

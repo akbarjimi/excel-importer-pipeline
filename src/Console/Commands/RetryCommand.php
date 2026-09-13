@@ -19,9 +19,9 @@ use Throwable;
 
 final class RetryCommand extends Command
 {
-    protected $signature = 'excel:retry {fileId : Excel file ID}';
+    protected string $signature = 'excel:retry {fileId : Excel file ID}';
 
-    protected $description = 'Re-dispatch failed chunks for an Excel import file.';
+    protected string $description = 'Re-dispatch failed chunks for an Excel import file.';
 
     public function handle(
         ExcelFileRepository $fileRepository,
@@ -42,44 +42,74 @@ final class RetryCommand extends Command
             return self::FAILURE;
         }
 
-        $failedIds = ExcelRowChunk::query()
+        if ($file->status !== ExcelFileStatus::FAILED) {
+            $this->error(sprintf(
+                'File [%d] status is [%s]. Retry requires [%s].',
+                $fileId,
+                $file->status->value,
+                ExcelFileStatus::FAILED->value,
+            ));
+
+            return self::FAILURE;
+        }
+
+        $failedChunkIds = ExcelRowChunk::query()
             ->whereHas('excelSheet', fn ($q) => $q->where('excel_file_id', $fileId))
             ->where('status', ExcelChunkStatus::FAILED->value)
             ->pluck('id')
             ->all();
 
-        if ($failedIds === []) {
-            $this->info("No failed chunks for file [{$fileId}].");
+        if ($failedChunkIds === []) {
+            $this->error(
+                "File [{$fileId}] has no failed chunks. "
+                .'Retry is only supported for chunk-level failures. Re-import the file instead.'
+            );
 
-            return self::SUCCESS;
+            return self::FAILURE;
         }
 
-        if ($file->status === ExcelFileStatus::FAILED) {
-            $fileRepository->markAsPending($fileId);
-        }
+        $fileRepository->markAsProcessing($fileId);
 
-        $reset = $chunkRepository->markManyAsPending($failedIds);
+        foreach ($failedChunkIds as $chunkId) {
+            $chunkRepository->markAsPending($chunkId);
+        }
 
         $jobs = array_map(
             static fn (int $id): ProcessChunkJob => new ProcessChunkJob($id),
-            $failedIds,
+            $failedChunkIds,
         );
 
         Bus::batch($jobs)
             ->name("excel-retry:{$fileId}")
             ->onQueue(config('excel-importer.queue', 'default'))
-            ->allowFailures(false)
+            ->allowFailures(true)
             ->then(function (Batch $batch) use ($fileId, $fileRepository): void {
-                $fileRepository->markAsProcessing($fileId);
+                if ($batch->failedJobs > 0) {
+                    $fileRepository->markAsFailed(
+                        $fileId,
+                        "Retry failed: {$batch->failedJobs} chunks still failing.",
+                    );
+
+                    return;
+                }
+
                 $fileRepository->markAsCompleted($fileId);
                 FileProcessingCompleted::dispatch($fileId);
             })
             ->catch(function (Batch $batch, Throwable $e) use ($fileId, $fileRepository): void {
                 $fileRepository->markAsFailed($fileId, $e->getMessage());
             })
+            ->finally(function (Batch $batch) use ($fileId, $fileRepository): void {
+                $fileRepository->recordBatchId($fileId, $batch->id);
+            })
             ->dispatch();
 
-        $this->info("Reset {$reset} chunks. Dispatched ".count($jobs)." retry jobs.");
+        $this->info(sprintf(
+            'Reset %d chunks. Dispatched %d retry jobs for file %d.',
+            count($failedChunkIds),
+            count($jobs),
+            $fileId,
+        ));
 
         return self::SUCCESS;
     }
