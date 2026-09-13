@@ -117,7 +117,7 @@ final class ErrorReportService
         $firstRow = $rows->first();
         $dataKeys = $firstRow ? array_keys($firstRow->content ?? []) : [];
 
-        $header = array_merge([self::COLUMN_ROW_INDEX], $dataKeys, [self::COLUMN_ERRORS]);
+        $header = array_merge($dataKeys, [self::COLUMN_ROW_INDEX, self::COLUMN_ERRORS]);
 
         $writer = new Writer;
         $writer->openToFile($path);
@@ -128,11 +128,12 @@ final class ErrorReportService
             foreach ($rows as $row) {
                 $data = $row->content ?? [];
 
-                $values = [$row->row_index];
+                $values = [];
                 foreach ($dataKeys as $key) {
                     $values[] = $data[$key] ?? null;
                 }
 
+                $values[] = $row->row_index;
                 $values[] = $row->errors
                     ->map(fn ($error) => sprintf('[%s] %s', $error->field ?? '-', $error->message))
                     ->implode(' | ');
