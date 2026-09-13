@@ -22,7 +22,8 @@ enum ExcelFileStatus: string
             self::ROWS_EXTRACTING => in_array($new, [self::ROWS_EXTRACTED, self::FAILED]),
             self::ROWS_EXTRACTED => in_array($new, [self::PROCESSING, self::FAILED]),
             self::PROCESSING => in_array($new, [self::COMPLETED, self::FAILED]),
-            self::COMPLETED, self::FAILED => false,
+            self::FAILED => in_array($new, [self::PENDING]), // retry
+            self::COMPLETED => false,
         };
     }
 }
