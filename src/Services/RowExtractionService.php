@@ -7,8 +7,6 @@ namespace Akbarjimi\ExcelImporter\Services;
 use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
 use Akbarjimi\ExcelImporter\Contracts\RowExtractorInterface;
-use Akbarjimi\ExcelImporter\DTOs\RowData;
-use Akbarjimi\ExcelImporter\DTOs\StagedRow;
 use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
@@ -19,85 +17,53 @@ final class RowExtractionService implements RowExtractorInterface
 {
     use LogsImportActivity;
 
-    /** @var list<StagedRow> */
-    private array $buffer = [];
-
-    private int $inserted = 0;
-
-    private int $batchSize;
-
-    private string $hashAlgo;
-
     public function __construct(
-        private readonly ExcelReaderDriver $readerDriver,
-        private readonly ExcelRowRepository $rowRepository,
+        private readonly ExcelReaderDriver    $readerDriver,
+        private readonly ExcelRowRepository   $rowRepository,
         private readonly ExcelSheetRepository $sheetRepository,
-    ) {
-        $this->batchSize = (int) config('excel-importer.insert_batch_size', 100);
-        $this->hashAlgo = config('excel-importer.hash_algo', 'sha256');
+        private readonly int                  $batchSize,
+        private readonly string               $hashAlgo,
+    )
+    {
     }
 
     public function extract(ExcelSheet $sheet): int
     {
-        $this->reset();
+        $this->sheetRepository->markAsExtracting($sheet->id);
 
         try {
+            $buffer = new SheetRowBuffer(
+                $sheet->id,
+                $this->rowRepository,
+                $this->hashAlgo,
+                $this->batchSize,
+            );
+
             $this->readerDriver->readRows(
                 $sheet->excelFile->path,
                 $sheet->sheet_index,
-                fn (RowData $row) => $this->bufferRow($row, $sheet)
+                $buffer,
             );
 
-            $this->flushBuffer();
+            $buffer->flush();
 
             $this->sheetRepository->markAsExtracted($sheet->id);
 
-            $this->importLog(LogLevel::INFO, "Extracted {$this->inserted} rows from sheet {$sheet->id}.", [
-                'rows' => $this->inserted,
+            $this->importLog(LogLevel::INFO, "Extracted {$buffer->inserted()} rows from sheet {$sheet->id}.", [
                 'sheet_id' => $sheet->id,
+                'rows' => $buffer->inserted(),
             ]);
 
-            return $this->inserted;
+            return $buffer->inserted();
         } catch (Throwable $e) {
+            $this->sheetRepository->markAsFailed($sheet->id, $e->getMessage());
+
             $this->importLog(LogLevel::CRITICAL, "Extraction failed for sheet {$sheet->id}. Error: {$e->getMessage()}", [
                 'sheet_id' => $sheet->id,
                 'error' => $e->getMessage(),
             ]);
+
             throw $e;
         }
-    }
-
-    private function reset(): void
-    {
-        $this->inserted = 0;
-        $this->buffer = [];
-    }
-
-    private function bufferRow(RowData $row, ExcelSheet $sheet): void
-    {
-        $encoded = json_encode($row, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-        $this->buffer[] = new StagedRow(
-            sheetId: $sheet->id,
-            content: $encoded,
-            hashAlgo: $this->hashAlgo,
-            contentHash: hash($this->hashAlgo, $encoded),
-            createdAt: now()->toDateTimeString(),
-            updatedAt: now()->toDateTimeString(),
-        );
-
-        if (count($this->buffer) >= $this->batchSize) {
-            $this->flushBuffer();
-        }
-    }
-
-    private function flushBuffer(): void
-    {
-        if (empty($this->buffer)) {
-            return;
-        }
-        $data = array_map(fn (StagedRow $row) => $row->toArray(), $this->buffer);
-        $this->rowRepository->bulkUpsert($data);
-        $this->inserted += count($this->buffer);
-        $this->buffer = [];
     }
 }
