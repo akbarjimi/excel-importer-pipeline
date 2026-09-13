@@ -21,8 +21,6 @@ return new class extends Migration
             $table->string('error_code')->nullable();
             $table->text('message');
 
-            $table->boolean('is_mapping_error')->default(false);
-
             $table->timestamps();
         });
     }
