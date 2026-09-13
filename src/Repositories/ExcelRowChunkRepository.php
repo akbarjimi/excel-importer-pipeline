@@ -49,6 +49,21 @@ final class ExcelRowChunkRepository
         $this->markAs($chunkId, ExcelRowChunk::class, ExcelChunkStatus::PENDING);
     }
 
+    public function markManyAsPending(array $chunkIds): int
+    {
+        if ($chunkIds === []) {
+            return 0;
+        }
+
+        return ExcelRowChunk::query()
+            ->whereIn('id', $chunkIds)
+            ->where('status', ExcelChunkStatus::FAILED->value)
+            ->update([
+                'status' => ExcelChunkStatus::PENDING->value,
+                'error' => null,
+            ]);
+    }
+
     public function markAsProcessing(int $chunkId): void
     {
         $this->markAs($chunkId, ExcelRowChunk::class, ExcelChunkStatus::PROCESSING);
