@@ -38,7 +38,7 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
 
     public function tags(): array
     {
-        return ['excel-sheets-scan', "file:{$this->event?->fileId}"];
+        return ['excel-sheets-scan'];
     }
 
     public function handle(FileSheetsScanCompleted $event): void

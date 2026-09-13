@@ -37,7 +37,7 @@ final class HandleExcelFileRegistered implements ShouldQueueAfterCommit
 
     public function tags(): array
     {
-        return ['excel-registered', "file:{$this->event?->excelFileId}"];
+        return ['excel-registered'];
     }
 
     public function handle(ExcelFileRegistered $event): void

@@ -30,7 +30,7 @@ final class InvokeImportHandler implements ShouldQueueAfterCommit
 
     public function tags(): array
     {
-        return ['excel-handler', "file:{$this->event?->fileId}"];
+        return ['excel-handler'];
     }
 
     public function handle(FileProcessingCompleted $event): void
