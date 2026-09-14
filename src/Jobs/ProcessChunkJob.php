@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Jobs;
 
+use Akbarjimi\ExcelImporter\Concerns\LogsImportActivity;
 use Akbarjimi\ExcelImporter\Services\ChunkProcessor;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
@@ -14,7 +15,7 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 
 final class ProcessChunkJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable;
+    use Batchable, Dispatchable, InteractsWithQueue, Queueable, LogsImportActivity;
 
     public int $tries = 3;
     public int $timeout = 300;

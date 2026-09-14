@@ -4,9 +4,7 @@ use Akbarjimi\ExcelImporter\Jobs\ProcessChunkJob;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelRowChunk;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
-use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
-use Akbarjimi\ExcelImporter\Services\TransformService;
-use Akbarjimi\ExcelImporter\Services\ValidateService;
+use Akbarjimi\ExcelImporter\Services\ChunkProcessor;
 
 it('processes a chunk idempotently', function () {
     $sheet = ExcelSheet::factory()->create();
@@ -20,9 +18,9 @@ it('processes a chunk idempotently', function () {
         'status' => 'pending',
     ]);
 
-    $job = app(ProcessChunkJob::class, ['chunkId' => $chunk->getKey()]);
-    $job->handle(app(TransformService::class), app(ValidateService::class), app(ExcelRowRepository::class));
-    $job->handle(app(TransformService::class), app(ValidateService::class), app(ExcelRowRepository::class));
+    $job = new ProcessChunkJob($chunk->id);
+    $job->handle(app(ChunkProcessor::class));
+    $job->handle(app(ChunkProcessor::class));
 
-    expect($chunk->fresh()->status)->toBe('completed');
+    expect($chunk->fresh()->status)->toBe(\Akbarjimi\ExcelImporter\Enums\ExcelChunkStatus::COMPLETED);
 });
