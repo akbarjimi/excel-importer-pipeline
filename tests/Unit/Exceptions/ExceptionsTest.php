@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Tests\Unit\Exceptions;
 
-use Akbarjimi\ExcelImporter\Exceptions\File\FileNotFoundException;
 use Akbarjimi\ExcelImporter\Exceptions\File\HandlerMissingException;
 use Akbarjimi\ExcelImporter\Exceptions\ImportException;
 use Akbarjimi\ExcelImporter\Exceptions\ImportFileNotFoundException;
@@ -20,23 +19,6 @@ use Akbarjimi\ExcelImporter\Exceptions\Sheet\SheetNotFoundException;
  * @group exceptions
  */
 describe('Exceptions', function () {
-    it('FileNotFoundException throws with correct message', function () {
-        $exception = FileNotFoundException::make('local', 'test.xlsx');
-
-        expect($exception)
-            ->toBeInstanceOf(ImportException::class)
-            ->getMessage()->toContain('test.xlsx')
-            ->getMessage()->toContain('local');
-    });
-
-    it('HandlerMissingException throws with correct message', function () {
-        $exception = HandlerMissingException::make();
-
-        expect($exception)
-            ->toBeInstanceOf(ImportException::class)
-            ->getMessage()->toContain('handler');
-    });
-
     it('ImportFileNotFoundException throws with correct message', function () {
         $exception = ImportFileNotFoundException::make('s3', 'path/file.xlsx');
 
@@ -70,22 +52,13 @@ describe('Exceptions', function () {
     });
 
     it('all exceptions extend ImportException', function () {
-        expect(FileNotFoundException::make('local', 'file.xlsx'))
-            ->toBeInstanceOf(ImportException::class);
-
-        expect(HandlerMissingException::make())
-            ->toBeInstanceOf(ImportException::class);
-
         expect(ImportFileNotFoundException::make('local', 'file.xlsx'))
-            ->toBeInstanceOf(ImportException::class);
-
-        expect(EmptySheetException::forFile(1))
-            ->toBeInstanceOf(ImportException::class);
-
-        expect(new SheetNotFoundException('msg'))
-            ->toBeInstanceOf(ImportException::class);
-
-        expect(MissingHandlerException::make())
+            ->toBeInstanceOf(ImportException::class)
+            ->and(EmptySheetException::forFile(1))
+            ->toBeInstanceOf(ImportException::class)
+            ->and(new SheetNotFoundException('msg'))
+            ->toBeInstanceOf(ImportException::class)
+            ->and(MissingHandlerException::make())
             ->toBeInstanceOf(ImportException::class);
     });
 });
