@@ -82,16 +82,6 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
             ->allowFailures(true)
             ->then(function (Batch $batch) use ($fileId) {
                 if ($batch->failedJobs > 0) {
-                    $this->fileRepository->markAsFailed(
-                        $fileId,
-                        "{$batch->failedJobs} chunks failed. Retry with: php artisan excel:retry {$fileId}",
-                    );
-
-                    $this->importLog(LogLevel::CRITICAL, "Processing batch completed with failures for file {$fileId}.", [
-                        'batch_id' => $batch->id,
-                        'failed_jobs' => $batch->failedJobs,
-                    ]);
-
                     return;
                 }
 
