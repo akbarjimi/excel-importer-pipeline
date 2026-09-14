@@ -60,21 +60,6 @@ describe('ExcelFileRepository', function () {
         expect($this->repo->findFile(999))->toBeNull();
     });
 
-    it('transitions to a valid status', function () {
-        $file = ExcelFile::factory()->create(['status' => ExcelFileStatus::PENDING]);
-
-        $this->repo->transitionTo($file->id, ExcelFileStatus::READING);
-
-        expect($file->refresh()->status)->toBe(ExcelFileStatus::READING);
-    });
-
-    it('throws an exception on invalid transition', function () {
-        $file = ExcelFile::factory()->create(['status' => ExcelFileStatus::COMPLETED]);
-
-        expect(fn () => $this->repo->transitionTo($file->id, ExcelFileStatus::PROCESSING))
-            ->toThrow(\RuntimeException::class, 'Invalid status transition');
-    });
-
     it('marks as reading', function () {
         $file = ExcelFile::factory()->create(['status' => ExcelFileStatus::PENDING]);
 
@@ -141,5 +126,20 @@ describe('ExcelFileRepository', function () {
         $this->repo->recordBatchId($file->id, 'batch-123');
 
         expect($file->refresh()->batch_id)->toBe('batch-123');
+    });
+
+    it('marks as reading from pending', function () {
+        $file = ExcelFile::factory()->create(['status' => ExcelFileStatus::PENDING]);
+
+        $this->repo->markAsReading($file->id);
+
+        expect($file->refresh()->status)->toBe(ExcelFileStatus::READING);
+    });
+
+    it('throws on invalid transition', function () {
+        $file = ExcelFile::factory()->create(['status' => ExcelFileStatus::COMPLETED]);
+
+        expect(fn () => $this->repo->markAsReading($file->id))
+            ->toThrow(\RuntimeException::class, 'Invalid status transition');
     });
 });

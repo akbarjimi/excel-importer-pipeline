@@ -128,22 +128,22 @@ describe('ExcelRowRepository', function () {
         }
     });
 
-    it('transitions row status', function () {
+    it('marks row as validating from pending', function () {
         $row = ExcelRow::factory()->for($this->sheet)->create([
             'status' => ExcelRowStatus::PENDING,
         ]);
 
-        $this->repo->transitionTo($row->id, ExcelRowStatus::VALIDATING);
+        $this->repo->markAsValidating($row->id);
 
         expect($row->refresh()->status)->toBe(ExcelRowStatus::VALIDATING);
     });
 
-    it('throws exception on invalid row transition', function () {
+    it('throws on invalid row transition', function () {
         $row = ExcelRow::factory()->for($this->sheet)->create([
             'status' => ExcelRowStatus::PROCESSED,
         ]);
 
-        expect(fn () => $this->repo->transitionTo($row->id, ExcelRowStatus::VALIDATING))
+        expect(fn () => $this->repo->markAsValidating($row->id))
             ->toThrow(\RuntimeException::class, 'Invalid transition');
     });
 });
