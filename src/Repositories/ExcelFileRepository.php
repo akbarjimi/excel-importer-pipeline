@@ -55,7 +55,9 @@ final class ExcelFileRepository
 
     public function markAsCompleted(int $fileId): void
     {
-        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::COMPLETED);
+        $this->markAs($fileId, ExcelFile::class, ExcelFileStatus::COMPLETED, [
+            'completed_at' => now(),
+        ]);
     }
 
     public function markAsFailed(int $fileId, ?string $reason = null): void
