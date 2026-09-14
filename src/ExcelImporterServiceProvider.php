@@ -16,11 +16,15 @@ use Akbarjimi\ExcelImporter\Listeners\HandleExcelFileRegistered;
 use Akbarjimi\ExcelImporter\Listeners\HandleFileSheetsScanCompleted;
 use Akbarjimi\ExcelImporter\Listeners\InvokeImportHandler;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowChunkRepository;
+use Akbarjimi\ExcelImporter\Repositories\ExcelRowErrorRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelSheetRepository;
 use Akbarjimi\ExcelImporter\Services\ChunkerService;
+use Akbarjimi\ExcelImporter\Services\ChunkProcessor;
 use Akbarjimi\ExcelImporter\Services\LocalFileResolver;
 use Akbarjimi\ExcelImporter\Services\RowExtractionService;
+use Akbarjimi\ExcelImporter\Services\TransformService;
+use Akbarjimi\ExcelImporter\Services\ValidateService;
 use Akbarjimi\ExcelImporter\Support\ExcelReaderManager;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -71,6 +75,18 @@ class ExcelImporterServiceProvider extends ServiceProvider
             $app->make(ExcelRowChunkRepository::class),
             $app->make(ExcelSheetRepository::class),
         ));
+
+        $this->app->bind(ChunkProcessor::class, function ($app) {
+            return new ChunkProcessor(
+                $app->make(ExcelRowRepository::class),
+                $app->make(ExcelRowChunkRepository::class),
+                $app->make(ExcelRowErrorRepository::class),
+                $app->make(ExcelSheetRepository::class),
+                $app->make(TransformService::class),
+                $app->make(ValidateService::class),
+                (int) config('excel-importer.insert_batch_size', 100),
+            );
+        });
     }
 
     public function registerEventListeners(): void
