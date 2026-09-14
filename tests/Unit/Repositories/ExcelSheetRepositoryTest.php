@@ -98,8 +98,8 @@ describe('ExcelSheetRepository', function () {
             'status' => ExcelSheetStatus::COMPLETED,
         ]);
 
-        expect(fn () => $this->repo->transitionTo($sheet->id, ExcelSheetStatus::EXTRACTING))
-            ->toThrow(\RuntimeException::class, 'Invalid transition');
+        expect(fn () => $this->repo->markAsExtracting($sheet->id))
+            ->toThrow(\RuntimeException::class, 'Invalid status transition from completed to extracting');
     });
 
     it('sets chunk count', function () {
