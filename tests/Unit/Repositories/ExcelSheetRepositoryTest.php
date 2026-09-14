@@ -102,7 +102,6 @@ describe('ExcelSheetRepository', function () {
             ->toThrow(\RuntimeException::class, 'Invalid transition');
     });
 
-
     it('sets chunk count', function () {
         $sheet = ExcelSheet::factory()->for($this->file)->create([
             'chunk_count' => 0,
