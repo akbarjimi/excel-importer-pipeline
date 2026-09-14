@@ -16,19 +16,9 @@ abstract class TestCase extends Orchestra
     {
         parent::setUp();
 
-        // Use sync queue for tests to run jobs immediately
         config(['queue.default' => 'sync']);
-
-        // Load the test config for sheets
         config(['excel-importer-sheets' => require __DIR__.'/_fixtures/config/excel-importer-sheets.php']);
 
-        // Fake events and jobs by default (can be overridden in specific tests)
-        Event::fake();
-        Bus::fake();
-        Queue::fake();
-
-        $this->app['translator']->addNamespace('excel-importer', __DIR__.'/../lang');
-        $this->app->setLocale('en');
     }
 
     /**
