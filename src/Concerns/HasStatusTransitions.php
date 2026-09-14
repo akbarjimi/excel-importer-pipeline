@@ -14,6 +14,10 @@ trait HasStatusTransitions
             throw new \RuntimeException('Model status must have canTransitionTo method.');
         }
 
+        if ($model->status === $newStatus) {
+            return;
+        }
+
         if (! $model->status->canTransitionTo($newStatus)) {
             throw new \RuntimeException(
                 "Invalid status transition from {$model->status->value} to {$newStatus->value}"
