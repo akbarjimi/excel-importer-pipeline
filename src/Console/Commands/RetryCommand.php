@@ -19,9 +19,9 @@ use Throwable;
 
 final class RetryCommand extends Command
 {
-    protected string $signature = 'excel:retry {fileId : Excel file ID}';
+    protected $signature = 'excel:retry {fileId : Excel file ID}';
 
-    protected string $description = 'Re-dispatch failed chunks for an Excel import file.';
+    protected $description = 'Re-dispatch failed chunks for an Excel import file.';
 
     public function handle(
         ExcelFileRepository $fileRepository,
