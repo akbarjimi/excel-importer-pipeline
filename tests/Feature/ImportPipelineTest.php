@@ -31,7 +31,8 @@ beforeEach(function () {
 
     Storage::disk('local')->put($this->relativeTargetPath, file_get_contents($stub));
 
-    app()->bind(PipelineTestHandler::class, fn () => new PipelineTestHandler);
+    $this->handler = new PipelineTestHandler;
+    app()->instance(PipelineTestHandler::class, $this->handler);
 });
 
 it('runs the full pipeline to completion', function () {
@@ -55,6 +56,5 @@ it('runs the full pipeline to completion', function () {
         ->where('status', 'validated')
         ->get();
     expect($rows)->toHaveCount(3)
-        ->and(app(PipelineTestHandler::class)->rows)->toHaveCount(3);
-
+        ->and($this->handler->rows)->toHaveCount(3);
 });
