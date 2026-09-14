@@ -74,20 +74,20 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
             ->onQueue(config('excel-importer.queue', 'default'))
             ->allowFailures(false)
             ->then(static function (Batch $batch) use ($fileId) {
-                $this->fileRepo->markAsRowsExtracted($fileId);
+                app(ExcelFileRepository::class)->markAsRowsExtracted($fileId);
                 AllRowsExtracted::dispatch($fileId);
                 $this->importLog(LogLevel::INFO, "All sheets extracted for file {$fileId}.", [
                     'batch_id' => $batch->id,
                 ]);
             })
             ->catch(static function (Batch $batch, Throwable $e) use ($fileId) {
-                $this->fileRepo->markAsFailed($fileId, $e->getMessage());
+                app(ExcelFileRepository::class)->markAsFailed($fileId, $e->getMessage());
                 $this->importLog(LogLevel::CRITICAL, "Extraction batch failed for file {$fileId}. Error: {$e->getMessage()}", [
                     'error' => $e->getMessage(),
                 ]);
             })
             ->finally(static function (Batch $batch) use ($fileId) {
-                $this->fileRepo->recordBatchId($fileId, $batch->id);
+                app(ExcelFileRepository::class)->recordBatchId($fileId, $batch->id);
             })
             ->dispatch();
     }

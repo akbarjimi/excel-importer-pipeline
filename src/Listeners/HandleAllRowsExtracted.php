@@ -85,7 +85,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
                     return;
                 }
 
-                $this->fileRepository->markAsCompleted($fileId);
+                app(ExcelFileRepository::class)->markAsCompleted($fileId);
                 FileProcessingCompleted::dispatch($fileId);
 
                 $this->importLog(LogLevel::INFO, "Processing batch completed for file {$fileId}.", [
@@ -93,12 +93,12 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
                 ]);
             })
             ->catch(static function (Batch $batch, Throwable $e) use ($fileId) {
-                $this->fileRepository->markAsFailed($fileId, $e->getMessage());
+                app(ExcelFileRepository::class)->markAsFailed($fileId, $e->getMessage());
 
                 $this->importLog(LogLevel::CRITICAL, "Processing batch failed for file {$fileId}. Error: {$e->getMessage()}");
             })
             ->finally(static function (Batch $batch) use ($fileId) {
-                $this->fileRepository->recordBatchId($fileId, $batch->id);
+                app(ExcelFileRepository::class)->recordBatchId($fileId, $batch->id);
             })
             ->dispatch();
 

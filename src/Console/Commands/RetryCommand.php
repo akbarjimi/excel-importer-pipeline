@@ -84,9 +84,9 @@ final class RetryCommand extends Command
             ->name("excel-retry:{$fileId}")
             ->onQueue(config('excel-importer.queue', 'default'))
             ->allowFailures(true)
-            ->then(static function (Batch $batch) use ($fileId, $fileRepository): void {
+            ->then(static function (Batch $batch) use ($fileId): void {
                 if ($batch->failedJobs > 0) {
-                    $fileRepository->markAsFailed(
+                    app(ExcelFileRepository::class)->markAsFailed(
                         $fileId,
                         "Retry failed: {$batch->failedJobs} chunks still failing.",
                     );
@@ -94,14 +94,14 @@ final class RetryCommand extends Command
                     return;
                 }
 
-                $fileRepository->markAsCompleted($fileId);
+                app(ExcelFileRepository::class)->markAsCompleted($fileId);
                 FileProcessingCompleted::dispatch($fileId);
             })
-            ->catch(static function (Batch $batch, Throwable $e) use ($fileId, $fileRepository): void {
-                $fileRepository->markAsFailed($fileId, $e->getMessage());
+            ->catch(static function (Batch $batch, Throwable $e) use ($fileId): void {
+                app(ExcelFileRepository::class)->markAsFailed($fileId, $e->getMessage());
             })
-            ->finally(static function (Batch $batch) use ($fileId, $fileRepository): void {
-                $fileRepository->recordBatchId($fileId, $batch->id);
+            ->finally(static function (Batch $batch) use ($fileId): void {
+                app(ExcelFileRepository::class)->recordBatchId($fileId, $batch->id);
             })
             ->dispatch();
 
