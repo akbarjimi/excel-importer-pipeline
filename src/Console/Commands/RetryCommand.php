@@ -24,10 +24,11 @@ final class RetryCommand extends Command
     protected $description = 'Re-dispatch failed chunks for an Excel import file.';
 
     public function handle(
-        ExcelFileRepository $fileRepository,
+        ExcelFileRepository     $fileRepository,
         ExcelRowChunkRepository $chunkRepository,
-    ): int {
-        $fileId = (int) $this->argument('fileId');
+    ): int
+    {
+        $fileId = (int)$this->argument('fileId');
         $file = ExcelFile::find($fileId);
 
         if ($file === null) {
@@ -54,7 +55,7 @@ final class RetryCommand extends Command
         }
 
         $failedChunkIds = ExcelRowChunk::query()
-            ->whereHas('excelSheet', fn ($q) => $q->where('excel_file_id', $fileId))
+            ->whereHas('excelSheet', fn($q) => $q->where('excel_file_id', $fileId))
             ->where('status', ExcelChunkStatus::FAILED->value)
             ->pluck('id')
             ->all();
@@ -62,7 +63,7 @@ final class RetryCommand extends Command
         if ($failedChunkIds === []) {
             $this->error(
                 "File [{$fileId}] has no failed chunks. "
-                .'Retry is only supported for chunk-level failures. Re-import the file instead.'
+                . 'Retry is only supported for chunk-level failures. Re-import the file instead.'
             );
 
             return self::FAILURE;
@@ -75,7 +76,7 @@ final class RetryCommand extends Command
         }
 
         $jobs = array_map(
-            static fn (int $id): ProcessChunkJob => new ProcessChunkJob($id),
+            static fn(int $id): ProcessChunkJob => new ProcessChunkJob($id),
             $failedChunkIds,
         );
 
@@ -83,7 +84,7 @@ final class RetryCommand extends Command
             ->name("excel-retry:{$fileId}")
             ->onQueue(config('excel-importer.queue', 'default'))
             ->allowFailures(true)
-            ->then(function (Batch $batch) use ($fileId, $fileRepository): void {
+            ->then(static function (Batch $batch) use ($fileId, $fileRepository): void {
                 if ($batch->failedJobs > 0) {
                     $fileRepository->markAsFailed(
                         $fileId,
@@ -96,10 +97,10 @@ final class RetryCommand extends Command
                 $fileRepository->markAsCompleted($fileId);
                 FileProcessingCompleted::dispatch($fileId);
             })
-            ->catch(function (Batch $batch, Throwable $e) use ($fileId, $fileRepository): void {
+            ->catch(static function (Batch $batch, Throwable $e) use ($fileId, $fileRepository): void {
                 $fileRepository->markAsFailed($fileId, $e->getMessage());
             })
-            ->finally(function (Batch $batch) use ($fileId, $fileRepository): void {
+            ->finally(static function (Batch $batch) use ($fileId, $fileRepository): void {
                 $fileRepository->recordBatchId($fileId, $batch->id);
             })
             ->dispatch();

@@ -80,7 +80,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
             ->name("excel-process:{$fileId}")
             ->onQueue(config('excel-importer.queue', 'default'))
             ->allowFailures(true)
-            ->then(function (Batch $batch) use ($fileId) {
+            ->then(static function (Batch $batch) use ($fileId) {
                 if ($batch->failedJobs > 0) {
                     return;
                 }
@@ -92,12 +92,12 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
                     'batch_id' => $batch->id,
                 ]);
             })
-            ->catch(function (Batch $batch, Throwable $e) use ($fileId) {
+            ->catch(static function (Batch $batch, Throwable $e) use ($fileId) {
                 $this->fileRepository->markAsFailed($fileId, $e->getMessage());
 
                 $this->importLog(LogLevel::CRITICAL, "Processing batch failed for file {$fileId}. Error: {$e->getMessage()}");
             })
-            ->finally(function (Batch $batch) use ($fileId) {
+            ->finally(static function (Batch $batch) use ($fileId) {
                 $this->fileRepository->recordBatchId($fileId, $batch->id);
             })
             ->dispatch();
