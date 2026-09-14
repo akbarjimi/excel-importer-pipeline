@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Akbarjimi\ExcelImporter\Tests;
 
 use Akbarjimi\ExcelImporter\ExcelImporterServiceProvider;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra
@@ -19,11 +18,9 @@ abstract class TestCase extends Orchestra
         config(['queue.default' => 'sync']);
         config(['excel-importer-sheets' => require __DIR__.'/_fixtures/config/excel-importer-sheets.php']);
 
+        $this->createJobBatchesTable();
     }
 
-    /**
-     * Load your service provider.
-     */
     protected function getPackageProviders($app): array
     {
         return [
@@ -41,7 +38,6 @@ abstract class TestCase extends Orchestra
             'prefix' => '',
         ]);
 
-        // Set test-specific config values
         $app['config']->set('excel-importer.default_disk', 'local');
         $app['config']->set('excel-importer.hash_algo', 'md5');
         $app['config']->set('excel-importer.max_sheets', 50);
@@ -50,21 +46,27 @@ abstract class TestCase extends Orchestra
     protected function defineDatabaseMigrations(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../src/database/migrations');
-        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
     }
 
-    /**
-     * Helper to copy test Excel files to storage.
-     */
-    protected function copyTestFileToStorage(string $source, string $destination): void
+    private function createJobBatchesTable(): void
     {
-        $storagePath = storage_path($destination);
-        $directory = dirname($storagePath);
+        $connection = $this->app['db']->connection();
 
-        if (! is_dir($directory)) {
-            mkdir($directory, 0755, true);
+        if ($connection->getSchemaBuilder()->hasTable('job_batches')) {
+            return;
         }
 
-        copy($source, $storagePath);
+        $connection->getSchemaBuilder()->create('job_batches', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->string('name');
+            $table->integer('total_jobs');
+            $table->integer('pending_jobs');
+            $table->integer('failed_jobs');
+            $table->longText('failed_job_ids');
+            $table->mediumText('options')->nullable();
+            $table->integer('cancelled_at')->nullable();
+            $table->integer('created_at');
+            $table->integer('finished_at')->nullable();
+        });
     }
 }
