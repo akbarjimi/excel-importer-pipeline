@@ -16,6 +16,7 @@ use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Bus;
 use Throwable;
+use Illuminate\Support\Facades\Log;
 
 final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
 {
@@ -76,13 +77,11 @@ final class HandleFileSheetsScanCompleted implements ShouldQueueAfterCommit
             ->then(static function (Batch $batch) use ($fileId) {
                 app(ExcelFileRepository::class)->markAsRowsExtracted($fileId);
                 AllRowsExtracted::dispatch($fileId);
-                $this->importLog(LogLevel::INFO, "All sheets extracted for file {$fileId}.", [
-                    'batch_id' => $batch->id,
-                ]);
+                Log::info("All sheets extracted for file {$fileId}.", ['batch_id' => $batch->id]);
             })
             ->catch(static function (Batch $batch, Throwable $e) use ($fileId) {
                 app(ExcelFileRepository::class)->markAsFailed($fileId, $e->getMessage());
-                $this->importLog(LogLevel::CRITICAL, "Extraction batch failed for file {$fileId}. Error: {$e->getMessage()}", [
+                Log::critical("Extraction batch failed for file {$fileId}.", [
                     'error' => $e->getMessage(),
                 ]);
             })
