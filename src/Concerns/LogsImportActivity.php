@@ -11,12 +11,16 @@ trait LogsImportActivity
 {
     protected function importLog(LogLevel $level, string $message, array $context = []): void
     {
-        $channel = config('excel-importer.logging.channels', config('logging.default', 'stack'));
+        $channels = config('excel-importer.logging.channels', [config('logging.default', 'stack')]);
 
-        Log::channel($channel)->log(
+        if (! is_array($channels) || $channels === []) {
+            $channels = ['stack'];
+        }
+
+        Log::stack($channels)->log(
             $level->value,
             $message,
-            array_merge(['package' => 'excel-importer'], $context)
+            array_merge(['package' => 'excel-importer'], $context),
         );
     }
 }
