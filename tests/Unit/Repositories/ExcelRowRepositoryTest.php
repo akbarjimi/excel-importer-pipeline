@@ -144,6 +144,6 @@ describe('ExcelRowRepository', function () {
         ]);
 
         expect(fn () => $this->repo->markAsValidating($row->id))
-            ->toThrow(\RuntimeException::class, 'Invalid transition');
+            ->toThrow(\RuntimeException::class, 'Invalid status transition from processed to validating');
     });
 });
