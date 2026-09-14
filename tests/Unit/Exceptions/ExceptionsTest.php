@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter\Tests\Unit\Exceptions;
 
-use Akbarjimi\ExcelImporter\Exceptions\File\HandlerMissingException;
 use Akbarjimi\ExcelImporter\Exceptions\ImportException;
 use Akbarjimi\ExcelImporter\Exceptions\ImportFileNotFoundException;
 use Akbarjimi\ExcelImporter\Exceptions\MissingHandlerException;

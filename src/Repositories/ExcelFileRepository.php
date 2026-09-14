@@ -19,7 +19,7 @@ final class ExcelFileRepository
 
     public function create(array $data): ExcelFile
     {
-        if (!isset($data['status'])) {
+        if (! isset($data['status'])) {
             $data['status'] = ExcelFileStatus::PENDING->value;
         }
 

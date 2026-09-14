@@ -25,7 +25,7 @@ it('creates deterministic chunks and dispatches jobs after commit', function () 
     expect($chunks)->toHaveCount(3)
         ->and($chunks->pluck('size')->sort()->values()->all())->toBe([1, 1000, 1000]);
 
-    $chunks->each(fn($c) => ProcessChunkJob::dispatch($c->getKey())->afterCommit());
+    $chunks->each(fn ($c) => ProcessChunkJob::dispatch($c->getKey())->afterCommit());
 
     Bus::assertDispatched(ProcessChunkJob::class, 3);
 });

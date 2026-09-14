@@ -15,9 +15,10 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 
 final class ProcessChunkJob implements ShouldQueue
 {
-    use Batchable, Dispatchable, InteractsWithQueue, Queueable, LogsImportActivity;
+    use Batchable, Dispatchable, InteractsWithQueue, LogsImportActivity, Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 300;
 
     public function __construct(public readonly int $chunkId) {}

@@ -18,14 +18,12 @@ final class RowExtractionService implements RowExtractorInterface
     use LogsImportActivity;
 
     public function __construct(
-        private readonly ExcelReaderDriver    $readerDriver,
-        private readonly ExcelRowRepository   $rowRepository,
+        private readonly ExcelReaderDriver $readerDriver,
+        private readonly ExcelRowRepository $rowRepository,
         private readonly ExcelSheetRepository $sheetRepository,
-        private readonly int                  $batchSize,
-        private readonly string               $hashAlgo,
-    )
-    {
-    }
+        private readonly int $batchSize,
+        private readonly string $hashAlgo,
+    ) {}
 
     public function extract(ExcelSheet $sheet): int
     {

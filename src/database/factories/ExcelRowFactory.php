@@ -34,6 +34,6 @@ class ExcelRowFactory extends Factory
 
     public function withSheet(ExcelSheet $sheet): static
     {
-        return $this->state(fn() => ['excel_sheet_id' => $sheet->id]);
+        return $this->state(fn () => ['excel_sheet_id' => $sheet->id]);
     }
 }

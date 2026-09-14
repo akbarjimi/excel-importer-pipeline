@@ -21,13 +21,11 @@ final class ChunkerService implements ChunkerInterface
     use LogsImportActivity;
 
     public function __construct(
-        private readonly int                     $chunkSize,
-        private readonly ExcelRowRepository      $rowRepo,
+        private readonly int $chunkSize,
+        private readonly ExcelRowRepository $rowRepo,
         private readonly ExcelRowChunkRepository $chunkRepo,
-        private readonly ExcelSheetRepository    $sheetRepo,
-    )
-    {
-    }
+        private readonly ExcelSheetRepository $sheetRepo,
+    ) {}
 
     public function createChunksForFile(ExcelFile $file): Collection
     {

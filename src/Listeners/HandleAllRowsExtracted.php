@@ -27,11 +27,9 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
     public int $timeout = 60;
 
     public function __construct(
-        private readonly ChunkerService      $chunker,
+        private readonly ChunkerService $chunker,
         private readonly ExcelFileRepository $fileRepository,
-    )
-    {
-    }
+    ) {}
 
     public function viaQueue(): string
     {
@@ -76,7 +74,7 @@ final class HandleAllRowsExtracted implements ShouldQueueAfterCommit
 
         $this->fileRepository->markAsProcessing($fileId);
 
-        $jobs = $chunks->map(fn($chunk) => new ProcessChunkJob($chunk->id))->all();
+        $jobs = $chunks->map(fn ($chunk) => new ProcessChunkJob($chunk->id))->all();
 
         Bus::batch($jobs)
             ->name("excel-process:{$fileId}")

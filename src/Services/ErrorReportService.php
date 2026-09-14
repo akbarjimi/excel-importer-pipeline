@@ -17,6 +17,7 @@ use RuntimeException;
 final class ErrorReportService
 {
     public const COLUMN_ROW_INDEX = '_row_index';
+
     public const COLUMN_ERRORS = '_errors';
 
     /**
