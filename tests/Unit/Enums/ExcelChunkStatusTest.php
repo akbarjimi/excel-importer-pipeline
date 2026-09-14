@@ -33,7 +33,7 @@ describe('ExcelChunkStatus', function () {
         'COMPLETED → PENDING' => [ExcelChunkStatus::COMPLETED, ExcelChunkStatus::PENDING, false],
         'FAILED → COMPLETED' => [ExcelChunkStatus::FAILED, ExcelChunkStatus::COMPLETED, false],
         'FAILED → PROCESSING' => [ExcelChunkStatus::FAILED, ExcelChunkStatus::PROCESSING, false],
-        'FAILED → PENDING' => [ExcelChunkStatus::FAILED, ExcelChunkStatus::PENDING, false],
+        'FAILED → PENDING' => [ExcelChunkStatus::FAILED, ExcelChunkStatus::PENDING, true],
     ]);
 
     it('has all expected status values', function () {
