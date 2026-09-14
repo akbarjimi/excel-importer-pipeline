@@ -1,5 +1,6 @@
 <?php
 
+use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Jobs\ProcessChunkJob;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
@@ -13,8 +14,14 @@ it('creates deterministic chunks and dispatches jobs after commit', function () 
     $file = ExcelFile::factory()->create();
 
     // Create sheets with unique indices
-    $sheet1 = ExcelSheet::factory()->for($file)->create(['sheet_index' => 0]);
-    $sheet2 = ExcelSheet::factory()->for($file)->create(['sheet_index' => 1]);
+    $sheet1 = ExcelSheet::factory()->for($file)->create([
+        'sheet_index' => 0,
+        'status' => ExcelSheetStatus::EXTRACTED->value,
+    ]);
+    $sheet2 = ExcelSheet::factory()->for($file)->create([
+        'sheet_index' => 1,
+        'status' => ExcelSheetStatus::EXTRACTED->value,
+    ]);
 
     ExcelRow::factory()->count(1001)->for($sheet1)->create();
     ExcelRow::factory()->count(1000)->for($sheet2)->create();

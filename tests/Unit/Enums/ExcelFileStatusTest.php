@@ -42,7 +42,7 @@ describe('ExcelFileStatus', function () {
         'COMPLETED → FAILED' => [ExcelFileStatus::COMPLETED, ExcelFileStatus::FAILED, false],
         'COMPLETED → PROCESSING' => [ExcelFileStatus::COMPLETED, ExcelFileStatus::PROCESSING, false],
         'FAILED → COMPLETED' => [ExcelFileStatus::FAILED, ExcelFileStatus::COMPLETED, false],
-        'FAILED → PROCESSING' => [ExcelFileStatus::FAILED, ExcelFileStatus::PROCESSING, false],
+        'FAILED → PROCESSING' => [ExcelFileStatus::FAILED, ExcelFileStatus::PROCESSING, true],
     ]);
 
     it('has all expected status values', function () {
@@ -56,9 +56,9 @@ describe('ExcelFileStatus', function () {
         expect(ExcelFileStatus::COMPLETED->canTransitionTo(ExcelFileStatus::READING))->toBeFalse();
     });
 
-    it('is terminal when failed', function () {
-        expect(ExcelFileStatus::FAILED->canTransitionTo(ExcelFileStatus::COMPLETED))->toBeFalse();
-        expect(ExcelFileStatus::FAILED->canTransitionTo(ExcelFileStatus::PROCESSING))->toBeFalse();
-        expect(ExcelFileStatus::FAILED->canTransitionTo(ExcelFileStatus::READING))->toBeFalse();
+    it('only allows retry from failed', function () {
+        expect(ExcelFileStatus::FAILED->canTransitionTo(ExcelFileStatus::PROCESSING))->toBeTrue()
+            ->and(ExcelFileStatus::FAILED->canTransitionTo(ExcelFileStatus::COMPLETED))->toBeFalse()
+            ->and(ExcelFileStatus::FAILED->canTransitionTo(ExcelFileStatus::READING))->toBeFalse();
     });
 });

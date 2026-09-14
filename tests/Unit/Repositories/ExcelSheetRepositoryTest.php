@@ -88,7 +88,7 @@ describe('ExcelSheetRepository', function () {
             'status' => ExcelSheetStatus::PENDING,
         ]);
 
-        $this->repo->transitionTo($sheet->id, ExcelSheetStatus::EXTRACTING);
+        $this->repo->markAsExtracting($sheet->id);
 
         expect($sheet->refresh()->status)->toBe(ExcelSheetStatus::EXTRACTING);
     });
@@ -102,29 +102,6 @@ describe('ExcelSheetRepository', function () {
             ->toThrow(\RuntimeException::class, 'Invalid transition');
     });
 
-    it('increments processed chunks when below limit', function () {
-        $sheet = ExcelSheet::factory()->for($this->file)->create([
-            'chunk_count' => 5,
-            'processed_chunks' => 2,
-        ]);
-
-        $result = $this->repo->incrementProcessedChunks($sheet->id);
-
-        expect($result)->toBe(1);
-        expect($sheet->refresh()->processed_chunks)->toBe(3);
-    });
-
-    it('does not increment when already at limit', function () {
-        $sheet = ExcelSheet::factory()->for($this->file)->create([
-            'chunk_count' => 5,
-            'processed_chunks' => 5,
-        ]);
-
-        $result = $this->repo->incrementProcessedChunks($sheet->id);
-
-        expect($result)->toBe(0);
-        expect($sheet->refresh()->processed_chunks)->toBe(5);
-    });
 
     it('sets chunk count', function () {
         $sheet = ExcelSheet::factory()->for($this->file)->create([

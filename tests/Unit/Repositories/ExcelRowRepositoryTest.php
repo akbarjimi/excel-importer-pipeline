@@ -48,7 +48,7 @@ describe('ExcelRowRepository', function () {
             ],
         ];
 
-        $this->repo->bulkInsert($rows);
+        $this->repo->bulkUpsert($rows);
 
         $this->assertDatabaseCount('excel_rows', 2);
         $this->assertDatabaseHas('excel_rows', [
@@ -58,7 +58,7 @@ describe('ExcelRowRepository', function () {
     });
 
     it('does nothing on empty bulk insert', function () {
-        $this->repo->bulkInsert([]);
+        $this->repo->bulkUpsert([]);
         $this->assertDatabaseCount('excel_rows', 0);
     });
 

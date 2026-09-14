@@ -11,14 +11,19 @@ use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 final class ImportManager
 {
     public function __construct(
-        private Config $config,
-        private FilesystemFactory $storageFactory,
+        private Config              $config,
+        private FilesystemFactory   $storageFactory,
         private ExcelFileRepository $fileRepo,
-    ) {}
+    )
+    {
+    }
 
     public function import(string $path, ?string $disk = null): PendingImport
     {
-        $disk ??= $this->config->get('excel-importer.default_disk', $this->config->get('filesystems.default'));
+        $disk = $disk
+            ?? $this->config->get('excel-importer.default_disk')
+            ?? $this->config->get('filesystems.default')
+            ?? 'local';
 
         return new PendingImport(
             $path,

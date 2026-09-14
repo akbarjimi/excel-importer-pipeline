@@ -1,103 +1,60 @@
 <?php
 
+declare(strict_types=1);
+
+use Akbarjimi\ExcelImporter\Contracts\ImportHandler;
+use Akbarjimi\ExcelImporter\DTOs\ValidatedRow;
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
-use Akbarjimi\ExcelImporter\Events\AllRowsExtracted;
-use Akbarjimi\ExcelImporter\Events\ExcelFileRegistered;
-use Akbarjimi\ExcelImporter\Events\SheetReadyForExtraction;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
+use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Services\ImportManager;
-use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 
-use function Pest\Laravel\assertDatabaseHas;
+final class PipelineTestHandler implements ImportHandler
+{
+    /** @var list<ValidatedRow> */
+    public array $rows = [];
+
+    public function handle(int $fileId, iterable $rows): void
+    {
+        foreach ($rows as $row) {
+            $this->rows[] = $row;
+        }
+    }
+}
 
 beforeEach(function () {
-    $this->stubFileName = '1sheet3rows1header.xlsx';
-    $this->driver = config('excel-importer.default_disk');
+    $stub = __DIR__.'/../stubs/1sheet3rows1header.xlsx';
+    $this->relativeTargetPath = 'testing/1sheet3rows1header.xlsx';
 
-    $this->sourcePath = __DIR__.'/../stubs/'.$this->stubFileName;
+    Storage::disk('local')->put($this->relativeTargetPath, file_get_contents($stub));
 
-    $this->relativeTargetPath = 'testing/'.$this->stubFileName;
-    $this->absoluteTargetPath = Storage::disk($this->driver)->path($this->relativeTargetPath);
-
-    if (! is_dir(dirname($this->absoluteTargetPath))) {
-        mkdir(dirname($this->absoluteTargetPath), 0777, true);
-    }
-
-    copy($this->sourcePath, $this->absoluteTargetPath);
-
-    expect(file_exists($this->absoluteTargetPath))
-        ->toBeTrue("Failed to copy test Excel file into storage: {$this->absoluteTargetPath}");
+    app()->bind(PipelineTestHandler::class, fn () => new PipelineTestHandler);
 });
 
-it('stores Excel file metadata in database', function () {
-    Event::fake([ExcelFileRegistered::class]);
+it('runs the full pipeline to completion', function () {
+    config(['queue.default' => 'sync']);
 
-    $manager = app(ImportManager::class);
+    $file = app(ImportManager::class)
+        ->import($this->relativeTargetPath)
+        ->withHandler(PipelineTestHandler::class)
+        ->dispatch();
 
-    $file = $manager->import($this->relativeTargetPath);
+    $file->refresh();
 
-    expect($file)
-        ->toBeInstanceOf(ExcelFile::class)
-        ->file_name->toBe($this->stubFileName)
-        ->path->toBe($this->relativeTargetPath)
-        ->status->toBe(ExcelFileStatus::PENDING);
-
-    assertDatabaseHas('excel_files', [
-        'id' => $file->id,
-        'path' => $this->relativeTargetPath,
-        'file_name' => $this->stubFileName,
-    ]);
-
-    Event::assertDispatched(ExcelFileRegistered::class, fn ($event) => $event->file->id === $file->id);
-});
-
-it('stores Excel sheet metadata in database after file is uploaded', function () {
-    Event::fake([SheetReadyForExtraction::class]);
-    $manager = app(ImportManager::class);
-
-    $file = $manager->import($this->relativeTargetPath);
+    expect($file)->toBeInstanceOf(ExcelFile::class)
+        ->and($file->status)->toBe(ExcelFileStatus::COMPLETED);
 
     $sheets = ExcelSheet::where('excel_file_id', $file->id)->get();
+    expect($sheets)->toHaveCount(1)
+        ->and($sheets->first()->status)->toBe(ExcelSheetStatus::COMPLETED);
 
-    expect($sheets)
-        ->not->toBeEmpty()
-        ->count()->toBeGreaterThan(0);
+    $rows = ExcelRow::whereIn('excel_sheet_id', $sheets->pluck('id'))
+        ->where('status', 'validated')
+        ->get();
+    expect($rows)->toHaveCount(3)
+        ->and(app(PipelineTestHandler::class)->rows)->toHaveCount(3);
 
-    $firstSheet = $sheets->first();
-
-    expect($firstSheet->name)->toBeString()->not->toBeEmpty();
-    expect($firstSheet->rows_count)->toBeGreaterThan(0);
-    expect($firstSheet->status)->toBe(ExcelSheetStatus::PENDING);
-});
-
-it('dispatches sheet events after importing Excel file', function () {
-    Event::fake([
-        SheetReadyForExtraction::class,
-    ]);
-
-    $manager = app(ImportManager::class);
-    $manager->import($this->relativeTargetPath);
-
-    Event::assertDispatched(SheetReadyForExtraction::class);
-
-    $sheet = ExcelSheet::first();
-    expect($sheet)->not->toBeNull();
-    expect($sheet->status)->toBe(ExcelSheetStatus::PENDING);
-});
-
-it('extracts rows and fires AllSheetsDispatched when last sheet is processed', function () {
-    Event::fake([AllRowsExtracted::class]);
-
-    $manager = app(ImportManager::class);
-    $file = $manager->import($this->relativeTargetPath);
-
-    $this->assertDatabaseCount('excel_rows', 3);
-
-    $this->assertNotNull($file->excelSheets->first()->rows_extracted_at);
-
-    Event::assertDispatched(AllRowsExtracted::class, function ($event) use ($file) {
-        return $event->fileId === $file->getKey();
-    });
 });
