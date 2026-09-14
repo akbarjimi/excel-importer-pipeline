@@ -7,9 +7,8 @@ namespace Akbarjimi\ExcelImporter\Repositories;
 use Akbarjimi\ExcelImporter\Concerns\HasStatusTransitions;
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
-use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelFileRepositoryInterface;
 
-final class ExcelFileRepository implements ExcelFileRepositoryInterface
+final class ExcelFileRepository
 {
     use HasStatusTransitions;
 
@@ -20,7 +19,7 @@ final class ExcelFileRepository implements ExcelFileRepositoryInterface
 
     public function create(array $data): ExcelFile
     {
-        if (! isset($data['status'])) {
+        if (!isset($data['status'])) {
             $data['status'] = ExcelFileStatus::PENDING->value;
         }
 

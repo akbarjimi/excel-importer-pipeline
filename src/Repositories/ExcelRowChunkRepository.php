@@ -7,7 +7,6 @@ namespace Akbarjimi\ExcelImporter\Repositories;
 use Akbarjimi\ExcelImporter\Concerns\HasStatusTransitions;
 use Akbarjimi\ExcelImporter\Enums\ExcelChunkStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelRowChunk;
-use Akbarjimi\ExcelImporter\Repositories\Contracts\ExcelRowChunkRepositoryInterface;
 use Illuminate\Support\Collection;
 
 final class ExcelRowChunkRepository
