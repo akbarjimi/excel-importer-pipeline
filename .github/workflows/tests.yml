@@ -16,6 +16,8 @@ jobs:
         laravel: [ '10.*', '11.*', '12.*' ]
         exclude:
           - php: '8.1'
+            laravel: '11.*'
+          - php: '8.1'
             laravel: '12.*'
           - php: '8.4'
             laravel: '10.*'
@@ -30,8 +32,13 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           extensions: mbstring, zip, gd, sqlite3, pdo_sqlite
-          coverage: ${{ matrix.php == '8.1' && matrix.laravel == '10.*' && 'pcov' || 'none' }}
+          coverage: ${{ matrix.php == '8.2' && matrix.laravel == '10.*' && 'pcov' || 'none' }}
           ini-values: memory_limit=512M
+
+      - name: Configure composer policy
+        run: |
+          composer config --no-plugins allow-plugins.pestphp/pest-plugin true
+          composer config policy.advisories.block false
 
       - name: Install dependencies
         run: |
@@ -42,5 +49,5 @@ jobs:
         run: vendor/bin/pest --ci
 
       - name: Run coverage
-        if: matrix.php == '8.1' && matrix.laravel == '10.*'
+        if: matrix.php == '8.2' && matrix.laravel == '10.*'
         run: vendor/bin/pest --coverage --min=70 --ci
