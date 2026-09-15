@@ -7,12 +7,13 @@ use Akbarjimi\ExcelImporter\DTOs\ValidatedRow;
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
 use Akbarjimi\ExcelImporter\Enums\ExcelRowStatus;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
-use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Services\ImportManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+
+uses(RefreshDatabase::class);
 
 final class PipelineTestHandler implements ImportHandler
 {
@@ -27,9 +28,9 @@ final class PipelineTestHandler implements ImportHandler
     }
 }
 
-uses(RefreshDatabase::class);
-
 beforeEach(function () {
+    config(['queue.default' => 'sync']);
+
     $stub = __DIR__.'/../stubs/1sheet3rows1header.xlsx';
     $this->relativeTargetPath = 'testing/1sheet3rows1header.xlsx';
 
@@ -37,32 +38,55 @@ beforeEach(function () {
 
     $this->handler = new PipelineTestHandler;
     app()->instance(PipelineTestHandler::class, $this->handler);
-});
 
-it('runs the full pipeline to completion', function () {
-    config(['queue.default' => 'sync']);
-
-    $file = app(ImportManager::class)
+    $this->file = app(ImportManager::class)
         ->import($this->relativeTargetPath)
         ->withHandler(PipelineTestHandler::class)
-        ->dispatch();
+        ->dispatch()
+        ->refresh();
 
-    $file->refresh();
+    $this->sheetIds = ExcelSheet::where('excel_file_id', $this->file->id)->pluck('id');
+});
 
-    expect($file)->toBeInstanceOf(ExcelFile::class)
-        ->and($file->status)->toBe(ExcelFileStatus::COMPLETED);
+it('completes the file', function () {
+    expect($this->file->status)->toBe(ExcelFileStatus::COMPLETED);
+});
 
-    $sheets = ExcelSheet::where('excel_file_id', $file->id)->get();
-    expect($sheets)->toHaveCount(1)
-        ->and($sheets->first()->status)->toBe(ExcelSheetStatus::COMPLETED);
+it('completes the sheet', function () {
+    $sheet = ExcelSheet::where('excel_file_id', $this->file->id)->sole();
 
-    $rows = ExcelRow::whereIn('excel_sheet_id', $sheets->pluck('id'))
+    expect($sheet->status)->toBe(ExcelSheetStatus::COMPLETED);
+});
+
+it('persists one row per source row', function () {
+    expect(ExcelRow::whereIn('excel_sheet_id', $this->sheetIds)->count())->toBe(3);
+});
+
+it('validates two rows and fails the header row', function () {
+    $validated = ExcelRow::whereIn('excel_sheet_id', $this->sheetIds)
         ->where('status', ExcelRowStatus::VALIDATED)
-        ->get();
+        ->count();
 
-    expect($rows)->toHaveCount(3)
-        ->and($this->handler->rows)->toHaveCount(3);
+    $failed = ExcelRow::whereIn('excel_sheet_id', $this->sheetIds)
+        ->where('status', ExcelRowStatus::FAILED_VALIDATION)
+        ->count();
 
-    $total = ExcelRow::whereIn('excel_sheet_id', $sheets->pluck('id'))->count();
-    expect($total)->toBe(3);
+    expect($validated)->toBe(2)
+        ->and($failed)->toBe(1);
+});
+
+it('leaves no rows pending', function () {
+    $pending = ExcelRow::whereIn('excel_sheet_id', $this->sheetIds)
+        ->where('status', ExcelRowStatus::PENDING)
+        ->count();
+
+    expect($pending)->toBe(0);
+});
+
+it('passes two validated rows to the handler', function () {
+    expect($this->handler->rows)->toHaveCount(2);
+
+    foreach ($this->handler->rows as $row) {
+        expect($row)->toBeInstanceOf(ValidatedRow::class);
+    }
 });
