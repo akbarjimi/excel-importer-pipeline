@@ -41,7 +41,7 @@ abstract class TestCase extends Orchestra
             'prefix' => '',
         ]);
 
-        // Set test-specific config values
+        $app['config']->set('queue.batching.database', 'testbench');
         $app['config']->set('excel-importer.default_disk', 'local');
         $app['config']->set('excel-importer.hash_algo', 'md5');
         $app['config']->set('excel-importer.max_sheets', 50);
@@ -51,13 +51,13 @@ abstract class TestCase extends Orchestra
     {
         $this->loadMigrationsFrom(__DIR__.'/../src/database/migrations');
 
-        $this->app['db']->connection()->getSchemaBuilder()->create('job_batches', function ($table) {
+        $this->app['db']->connection('testbench')->getSchemaBuilder()->create('job_batches', function ($table) {
             $table->string('id')->primary();
             $table->string('name');
             $table->integer('total_jobs');
             $table->integer('pending_jobs');
             $table->integer('failed_jobs');
-            $table->text('failed_job_ids');
+            $table->longText('failed_job_ids');
             $table->mediumText('options')->nullable();
             $table->integer('cancelled_at')->nullable();
             $table->integer('created_at');

@@ -29,12 +29,6 @@ final class PipelineTestHandler implements ImportHandler
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    dump([
-        'tables' => collect(DB::select("SELECT name FROM sqlite_master WHERE type='table'"))
-            ->pluck('name')
-            ->all(),
-    ]);
-
     $stub = __DIR__.'/../stubs/1sheet3rows1header.xlsx';
     $this->relativeTargetPath = 'testing/1sheet3rows1header.xlsx';
 
