@@ -10,6 +10,7 @@ use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Services\ImportManager;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 
 final class PipelineTestHandler implements ImportHandler
@@ -25,7 +26,15 @@ final class PipelineTestHandler implements ImportHandler
     }
 }
 
+uses(RefreshDatabase::class);
+
 beforeEach(function () {
+    dump([
+        'tables' => collect(DB::select("SELECT name FROM sqlite_master WHERE type='table'"))
+            ->pluck('name')
+            ->all(),
+    ]);
+
     $stub = __DIR__.'/../stubs/1sheet3rows1header.xlsx';
     $this->relativeTargetPath = 'testing/1sheet3rows1header.xlsx';
 
