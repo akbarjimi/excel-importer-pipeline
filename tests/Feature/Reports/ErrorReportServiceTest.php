@@ -10,8 +10,13 @@ use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Services\ErrorReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use OpenSpout\Writer\XLSX\Writer;
 
 uses(RefreshDatabase::class);
+
+if (!class_exists(Writer::class)) {
+    test('spreadsheet export')->skip('openspout/openspout not installed');
+}
 
 function makeFileWithErrors(int $valid = 1, int $failed = 2): array
 {
@@ -67,10 +72,12 @@ it('serialises failed rows to json with nested errors', function () {
 
 it('writes a spreadsheet to the given disk', function () {
     Storage::fake('local');
-
     [$file] = makeFileWithErrors(valid: 0, failed: 2);
 
     $path = app(ErrorReportService::class)->toSpreadsheet($file->id, 'local');
 
     Storage::disk('local')->assertExists($path);
-});
+})->skip(
+    !class_exists(Writer::class),
+    'openspout/openspout not installed',
+);
