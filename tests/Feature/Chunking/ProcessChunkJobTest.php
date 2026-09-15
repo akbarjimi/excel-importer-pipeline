@@ -1,5 +1,6 @@
 <?php
 
+use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Jobs\ProcessChunkJob;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelRowChunk;
@@ -7,7 +8,11 @@ use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Services\ChunkProcessor;
 
 it('processes a chunk idempotently', function () {
-    $sheet = ExcelSheet::factory()->create();
+    $sheet = ExcelSheet::factory()->create([
+        'status' => ExcelSheetStatus::CHUNKS_DISPATCHED->value,
+        'chunk_count' => 1,
+    ]);
+
     $rows = ExcelRow::factory()->count(5)->for($sheet)->create();
 
     $chunk = ExcelRowChunk::create([
