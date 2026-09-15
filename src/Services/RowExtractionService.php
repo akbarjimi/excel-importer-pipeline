@@ -11,6 +11,7 @@ use Akbarjimi\ExcelImporter\Enums\LogLevel;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Repositories\ExcelRowRepository;
 use Akbarjimi\ExcelImporter\Repositories\ExcelSheetRepository;
+use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Throwable;
 
 final class RowExtractionService implements RowExtractorInterface
@@ -18,16 +19,25 @@ final class RowExtractionService implements RowExtractorInterface
     use LogsImportActivity;
 
     public function __construct(
-        private readonly ExcelReaderDriver $readerDriver,
-        private readonly ExcelRowRepository $rowRepository,
+        private readonly ExcelReaderDriver    $readerDriver,
+        private readonly ExcelRowRepository   $rowRepository,
         private readonly ExcelSheetRepository $sheetRepository,
-        private readonly int $batchSize,
-        private readonly string $hashAlgo,
-    ) {}
+        private readonly FilesystemFactory    $filesystem,
+        private readonly LocalFileResolver    $fileResolver,
+        private readonly int                  $batchSize,
+        private readonly string               $hashAlgo,
+    )
+    {
+    }
 
     public function extract(ExcelSheet $sheet): int
     {
         $this->sheetRepository->markAsExtracting($sheet->id);
+
+        $file = $sheet->excelFile;
+        $disk = $this->filesystem->disk($file->disk);
+        $localPath = $this->fileResolver->resolve($disk, $file->path);
+        $isTemp = $localPath !== $disk->path($file->path);
 
         try {
             $buffer = new SheetRowBuffer(
@@ -38,7 +48,7 @@ final class RowExtractionService implements RowExtractorInterface
             );
 
             $this->readerDriver->readRows(
-                $sheet->excelFile->path,
+                $localPath,
                 $sheet->sheet_index,
                 $buffer,
             );
@@ -62,6 +72,10 @@ final class RowExtractionService implements RowExtractorInterface
             ]);
 
             throw $e;
+        } finally {
+            if ($isTemp && is_file($localPath)) {
+                @unlink($localPath);
+            }
         }
     }
 }
