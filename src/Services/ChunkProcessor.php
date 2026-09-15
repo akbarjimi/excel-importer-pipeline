@@ -72,13 +72,13 @@ final class ChunkProcessor
                 }
 
                 if (count($buffer) >= $this->batchSize) {
-                    $this->rowRepository->bulkUpsert($buffer);
+                    $this->rowRepository->bulkUpdate($buffer);
                     $buffer = [];
                 }
             }
 
             if ($buffer !== []) {
-                $this->rowRepository->bulkUpsert($buffer);
+                $this->rowRepository->bulkUpdate($buffer);
             }
 
             $this->rowChunkRepository->markAsCompleted($chunkId);

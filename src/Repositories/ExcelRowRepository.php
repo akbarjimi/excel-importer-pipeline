@@ -29,6 +29,32 @@ final class ExcelRowRepository
             });
     }
 
+    public function bulkUpdate(array $rows, int $chunkSize = 500): void
+    {
+        if ($rows === []) {
+            return;
+        }
+
+        collect($rows)
+            ->chunk($chunkSize)
+            ->each(function ($chunk) {
+                foreach ($chunk as $row) {
+                    if (!isset($row['id'])) {
+                        continue;
+                    }
+
+                    DB::table('excel_rows')
+                        ->where('id', $row['id'])
+                        ->update([
+                            'content' => $row['content'],
+                            'status' => $row['status'],
+                            'row_index' => $row['row_index'] ?? null,
+                            'updated_at' => $row['updated_at'] ?? now(),
+                        ]);
+                }
+            });
+    }
+
     public function getRowsBetween(int $sheetId, int $fromRowId, int $toRowId): LazyCollection
     {
         return ExcelRow::query()

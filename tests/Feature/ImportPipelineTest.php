@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Akbarjimi\ExcelImporter\Contracts\ImportHandler;
 use Akbarjimi\ExcelImporter\DTOs\ValidatedRow;
 use Akbarjimi\ExcelImporter\Enums\ExcelFileStatus;
+use Akbarjimi\ExcelImporter\Enums\ExcelRowStatus;
 use Akbarjimi\ExcelImporter\Enums\ExcelSheetStatus;
 use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
@@ -56,8 +57,12 @@ it('runs the full pipeline to completion', function () {
         ->and($sheets->first()->status)->toBe(ExcelSheetStatus::COMPLETED);
 
     $rows = ExcelRow::whereIn('excel_sheet_id', $sheets->pluck('id'))
-        ->where('status', 'validated')
+        ->where('status', ExcelRowStatus::VALIDATED)
         ->get();
+
     expect($rows)->toHaveCount(3)
         ->and($this->handler->rows)->toHaveCount(3);
+
+    $total = ExcelRow::whereIn('excel_sheet_id', $sheets->pluck('id'))->count();
+    expect($total)->toBe(3);
 });
