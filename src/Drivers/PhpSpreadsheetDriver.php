@@ -16,17 +16,21 @@ final class PhpSpreadsheetDriver implements ExcelReaderDriver
     {
         $reader = IOFactory::createReaderForFile($filePath);
         $spreadsheet = $reader->load($filePath);
-        $sheet = $spreadsheet->getSheet($sheetIndex);
 
-        foreach ($sheet->getRowIterator() as $rowNumber => $row) {
-            $cells = [];
-            foreach ($row->getCellIterator() as $cell) {
-                $cells[] = $cell->getFormattedValue();
+        try {
+            $sheet = $spreadsheet->getSheet($sheetIndex);
+
+            foreach ($sheet->getRowIterator() as $rowNumber => $row) {
+                $cells = [];
+                foreach ($row->getCellIterator() as $cell) {
+                    $cells[] = $cell->getFormattedValue();
+                }
+                $handler->handle(new RowData($cells, $rowNumber - 1));
             }
-            $handler->handle(new RowData($cells, $rowNumber - 1));
+        } finally {
+            $spreadsheet->disconnectWorksheets();
+            unset($spreadsheet);
         }
-
-        $spreadsheet->disconnect();
     }
 
     public function listSheets(string $filePath): array
