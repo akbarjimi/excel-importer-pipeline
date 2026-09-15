@@ -29,17 +29,15 @@ final class RetryCommand extends Command
     ): int
     {
         $fileId = (int)$this->argument('fileId');
-        $file = ExcelFile::find($fileId);
+        $file = ExcelFile::withTrashed()->find($fileId);
 
         if ($file === null) {
             $this->error("File [{$fileId}] not found.");
-
             return self::FAILURE;
         }
 
         if ($file->trashed()) {
             $this->error("File [{$fileId}] is soft-deleted.");
-
             return self::FAILURE;
         }
 
