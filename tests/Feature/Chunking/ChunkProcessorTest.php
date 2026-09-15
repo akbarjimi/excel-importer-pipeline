@@ -31,6 +31,7 @@ function makeSheetWithChunk(int $rowCount = 3): array
     ]);
 
     $sheet = ExcelSheet::factory()->for($file)->create([
+        'name' => 'Sheet1',
         'status' => ExcelSheetStatus::CHUNKS_DISPATCHED->value,
         'chunk_count' => 1,
     ]);
