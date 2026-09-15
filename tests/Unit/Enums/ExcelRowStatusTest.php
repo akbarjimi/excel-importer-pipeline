@@ -24,9 +24,9 @@ describe('ExcelRowStatus', function () {
         expect($from->canTransitionTo($to))->toBe($expected);
     })->with([
         'PENDING → FAILED' => [ExcelRowStatus::PENDING, ExcelRowStatus::FAILED, true],
-        'PENDING → VALIDATED' => [ExcelRowStatus::PENDING, ExcelRowStatus::VALIDATED, false],
+        'PENDING → VALIDATED' => [ExcelRowStatus::PENDING, ExcelRowStatus::VALIDATED, true],
+        'PENDING → FAILED_VALIDATION' => [ExcelRowStatus::PENDING, ExcelRowStatus::FAILED_VALIDATION, true],
         'PENDING → PROCESSED' => [ExcelRowStatus::PENDING, ExcelRowStatus::PROCESSED, false],
-        'PENDING → FAILED_VALIDATION' => [ExcelRowStatus::PENDING, ExcelRowStatus::FAILED_VALIDATION, false],
         'VALIDATED → PROCESSED' => [ExcelRowStatus::VALIDATED, ExcelRowStatus::PROCESSED, true],
         'VALIDATED → FAILED' => [ExcelRowStatus::VALIDATED, ExcelRowStatus::FAILED, true],
         'VALIDATED → FAILED_VALIDATION' => [ExcelRowStatus::VALIDATED, ExcelRowStatus::FAILED_VALIDATION, false],
