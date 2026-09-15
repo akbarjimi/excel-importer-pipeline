@@ -53,7 +53,10 @@ function makeSheetWithChunk(int $rowCount = 3): array
 }
 
 it('marks row as failed when transformer throws, chunk still completes', function () {
-    config(['excel-importer-sheets.Sheet1.transformer' => ThrowingTransformer::class]);
+    config([
+        'excel-importer-sheets.Sheet1.mapping' => [],
+        'excel-importer-sheets.Sheet1.transformer' => ThrowingTransformer::class,
+    ]);
 
     [$file, $sheet, $rows, $chunk] = makeSheetWithChunk();
 
@@ -67,6 +70,8 @@ it('marks row as failed when transformer throws, chunk still completes', functio
 
 it('marks row as failed_validation when validation fails', function () {
     config([
+        'excel-importer-sheets.Sheet1.mapping' => [],
+        'excel-importer-sheets.Sheet1.transformer' => null,
         'excel-importer-sheets.Sheet1.validation' => ['email' => 'required|email'],
     ]);
 
