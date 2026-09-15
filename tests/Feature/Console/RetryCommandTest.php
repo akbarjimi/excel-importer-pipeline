@@ -52,9 +52,14 @@ it('dispatches retry batch for failed chunks', function () {
         'status' => ExcelSheetStatus::FAILED->value,
     ]);
 
-    ExcelRowChunk::factory()->count(3)->for($sheet)->create([
-        'status' => ExcelChunkStatus::FAILED->value,
-    ]);
+    ExcelRowChunk::factory()
+        ->count(3)
+        ->sequence(fn($sequence) => [
+            'from_row_id' => $sequence->index * 10,
+            'to_row_id' => $sequence->index * 10 + 9,
+        ])
+        ->for($sheet)
+        ->create(['status' => ExcelChunkStatus::FAILED->value]);
 
     $this->artisan('excel:retry', ['fileId' => $file->id])->assertSuccessful();
 
