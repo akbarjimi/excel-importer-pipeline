@@ -35,7 +35,7 @@ describe('ExcelSheetStatus', function () {
         'EXTRACTED → CHUNKS_DISPATCHED' => [ExcelSheetStatus::EXTRACTED, ExcelSheetStatus::CHUNKS_DISPATCHED, true],
         'EXTRACTED → FAILED' => [ExcelSheetStatus::EXTRACTED, ExcelSheetStatus::FAILED, true],
         'EXTRACTED → COMPLETED' => [ExcelSheetStatus::EXTRACTED, ExcelSheetStatus::COMPLETED, false],
-        'EXTRACTED → EXTRACTING' => [ExcelSheetStatus::EXTRACTED, ExcelSheetStatus::EXTRACTING, false],
+        'EXTRACTED → EXTRACTING' => [ExcelSheetStatus::EXTRACTED, ExcelSheetStatus::EXTRACTING, true],
         'CHUNKS_DISPATCHED → COMPLETED' => [ExcelSheetStatus::CHUNKS_DISPATCHED, ExcelSheetStatus::COMPLETED, true],
         'CHUNKS_DISPATCHED → FAILED' => [ExcelSheetStatus::CHUNKS_DISPATCHED, ExcelSheetStatus::FAILED, true],
         'CHUNKS_DISPATCHED → EXTRACTED' => [ExcelSheetStatus::CHUNKS_DISPATCHED, ExcelSheetStatus::EXTRACTED, false],
