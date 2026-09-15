@@ -43,6 +43,14 @@ final class ExcelRowChunkRepository
             ->get();
     }
 
+    public function allChunksProcessedForSheet(int $sheetId): bool
+    {
+        return ExcelRowChunk::query()
+            ->where('excel_sheet_id', $sheetId)
+            ->where('status', '!=', ExcelChunkStatus::COMPLETED->value)
+            ->doesntExist();
+    }
+
     public function markAsPending(int $chunkId): void
     {
         $this->markAs($chunkId, ExcelRowChunk::class, ExcelChunkStatus::PENDING, [

@@ -83,6 +83,10 @@ final class ChunkProcessor
 
             $this->rowChunkRepository->markAsCompleted($chunkId);
             DB::commit();
+
+            if ($this->rowChunkRepository->allChunksProcessedForSheet($sheet->id)) {
+                $this->sheetRepository->markAsCompleted($sheet->id);
+            }
         } catch (Throwable $e) {
             DB::rollBack();
             $this->rowChunkRepository->markAsFailed($chunkId, $e->getMessage());
