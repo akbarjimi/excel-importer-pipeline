@@ -128,15 +128,6 @@ describe('ExcelRowRepository', function () {
         }
     });
 
-    it('marks row as validating from pending', function () {
-        $row = ExcelRow::factory()->for($this->sheet)->create([
-            'status' => ExcelRowStatus::PENDING,
-        ]);
-
-        $this->repo->markAsValidating($row->id);
-
-        expect($row->refresh()->status)->toBe(ExcelRowStatus::VALIDATING);
-    });
 
     it('throws on invalid row transition', function () {
         $row = ExcelRow::factory()->for($this->sheet)->create([

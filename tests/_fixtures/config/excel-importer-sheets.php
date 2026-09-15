@@ -3,9 +3,9 @@
 return [
     'Sheet1' => [
         'mapping' => [
-            'name' => 'A1',
-            'email' => 'B1',
-            'age' => 'C1',
+            'name' => 'A',
+            'email' => 'B',
+            'age' => 'C',
         ],
         'validation' => [
             'name' => 'required|string|max:255',

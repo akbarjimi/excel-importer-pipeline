@@ -67,10 +67,6 @@ final class ExcelRowRepository
         $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::PENDING);
     }
 
-    public function markAsValidating(int $rowId): void
-    {
-        $this->markAs($rowId, ExcelRow::class, ExcelRowStatus::VALIDATING);
-    }
 
     public function markAsValidated(int $rowId): void
     {

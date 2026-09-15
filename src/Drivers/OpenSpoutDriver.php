@@ -72,11 +72,29 @@ final class OpenSpoutDriver implements ExcelReaderDriver
 
     private function normalizeRow(array $cells): array
     {
-        return array_map(
-            static fn ($value) => $value instanceof \DateTimeInterface
+        $result = [];
+        $index = 0;
+
+        foreach ($cells as $value) {
+            $result[$this->columnLetter($index)] = $value instanceof \DateTimeInterface
                 ? $value->format('Y-m-d H:i:s')
-                : $value,
-            $cells,
-        );
+                : $value;
+            $index++;
+        }
+
+        return $result;
+    }
+
+    private function columnLetter(int $index): string
+    {
+        $letter = '';
+        $index++;
+        while ($index > 0) {
+            $index--;
+            $letter = chr(65 + ($index % 26)) . $letter;
+            $index = intdiv($index, 26);
+        }
+
+        return $letter;
     }
 }
