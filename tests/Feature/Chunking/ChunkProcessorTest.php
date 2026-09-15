@@ -24,7 +24,10 @@ final class ThrowingTransformer implements TransformerInterface
     }
 }
 
-function makeSheetWithChunk(int $rowCount = 3): array
+/**
+ * @return array{0: ExcelFile, 1: ExcelSheet, 2: \Illuminate\Support\Collection<int, ExcelRow>, 3: ExcelRowChunk}
+ */
+function makeSheetWithChunk(int $rowCount = 3, array $content = ['A' => 'value']): array
 {
     $file = ExcelFile::factory()->create([
         'status' => ExcelFileStatus::PROCESSING->value,
@@ -37,7 +40,7 @@ function makeSheetWithChunk(int $rowCount = 3): array
     ]);
 
     $rows = ExcelRow::factory()->count($rowCount)->for($sheet)->create([
-        'content' => ['name' => 'John', 'email' => 'john@example.com', 'age' => 30],
+        'content' => $content,
         'status' => ExcelRowStatus::PENDING,
     ]);
 
@@ -60,8 +63,6 @@ it('marks row as failed when transformer throws, chunk still completes', functio
 
     [$file, $sheet, $rows, $chunk] = makeSheetWithChunk();
 
-    $rows->each(fn($row) => $row->update(['content' => ['A' => 'value']]));
-
     app(ChunkProcessor::class)->process($chunk->id);
 
     expect($chunk->fresh()->status)->toBe(ExcelChunkStatus::COMPLETED)
@@ -70,22 +71,27 @@ it('marks row as failed when transformer throws, chunk still completes', functio
         ->and($rows->first()->fresh()->errors()->count())->toBe(1);
 });
 
-it('marks row as failed when transformer throws, chunk still completes', function () {
+it('marks row as failed_validation when validation fails', function () {
     config([
         'excel-importer-sheets.Sheet1.mapping' => ['email' => 'A'],
-        'excel-importer-sheets.Sheet1.transformer' => ThrowingTransformer::class,
+        'excel-importer-sheets.Sheet1.transformer' => null,
+        'excel-importer-sheets.Sheet1.validation' => ['email' => 'required|email'],
     ]);
 
-    [$file, $sheet, $rows, $chunk] = makeSheetWithChunk();
+    [$file, $sheet, $rows, $chunk] = makeSheetWithChunk(2);
 
-    $rows->each(fn($row) => $row->update(['content' => ['A' => 'value']]));
+    $rows->first()->update(['content' => ['A' => 'not-an-email']]);
+    $rows->last()->update(['content' => ['A' => 'ok@example.com']]);
 
     app(ChunkProcessor::class)->process($chunk->id);
 
-    expect($chunk->fresh()->status)->toBe(ExcelChunkStatus::COMPLETED)
-        ->and($rows->fresh()->pluck('status')->unique()->all())
-        ->toBe([ExcelRowStatus::FAILED])
-        ->and($rows->first()->fresh()->errors()->count())->toBe(1);
+    $statuses = ExcelRow::whereIn('id', $rows->pluck('id'))
+        ->pluck('status', 'id')
+        ->map(fn($s) => $s->value)
+        ->all();
+
+    expect($statuses[$rows->first()->id])->toBe(ExcelRowStatus::FAILED_VALIDATION->value)
+        ->and($statuses[$rows->last()->id])->toBe(ExcelRowStatus::VALIDATED->value);
 });
 
 it('is idempotent when chunk already completed', function () {
