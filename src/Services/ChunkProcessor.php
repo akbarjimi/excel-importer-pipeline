@@ -29,15 +29,15 @@ final class ChunkProcessor
     public function process(int $chunkId): void
     {
         $chunk = $this->rowChunkRepository->findOrFail($chunkId);
+
+        if ($chunk->status === ExcelChunkStatus::COMPLETED) {
+            return;
+        }
+
         $sheet = $this->sheetRepository->getById($chunk->excel_sheet_id);
 
         if ($sheet->excelFile->trashed()) {
             $this->rowChunkRepository->markAsFailed($chunkId, 'File deleted.');
-
-            return;
-        }
-
-        if ($chunk->status === ExcelChunkStatus::COMPLETED) {
             return;
         }
 
@@ -89,7 +89,12 @@ final class ChunkProcessor
             }
         } catch (Throwable $e) {
             DB::rollBack();
-            $this->rowChunkRepository->markAsFailed($chunkId, $e->getMessage());
+
+            $chunk->refresh();
+
+            if ($chunk->status !== ExcelChunkStatus::COMPLETED) {
+                $this->rowChunkRepository->markAsFailed($chunkId, $e->getMessage());
+            }
 
             throw $e;
         }
