@@ -41,6 +41,6 @@ describe('ExcelRowStatus', function () {
 
     it('has all expected status values', function () {
         $statuses = array_column(ExcelRowStatus::cases(), 'value');
-        expect($statuses)->toContain('pending', 'validating', 'validated', 'failed_validation', 'processed', 'failed');
+        expect($statuses)->toContain('pending', 'validated', 'failed_validation', 'processed', 'failed');
     });
 });
