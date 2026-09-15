@@ -10,7 +10,10 @@ use Akbarjimi\ExcelImporter\Models\ExcelFile;
 use Akbarjimi\ExcelImporter\Models\ExcelRow;
 use Akbarjimi\ExcelImporter\Models\ExcelSheet;
 use Akbarjimi\ExcelImporter\Services\ImportManager;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 final class PipelineTestHandler implements ImportHandler
@@ -29,7 +32,21 @@ final class PipelineTestHandler implements ImportHandler
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $stub = __DIR__.'/../stubs/1sheet3rows1header.xlsx';
+    if (!Schema::hasTable('job_batches')) {
+        Schema::create('job_batches', function (Blueprint $table) {
+            $table->string('id')->primary();
+            $table->string('name');
+            $table->integer('total_jobs');
+            $table->integer('pending_jobs');
+            $table->integer('failed_jobs');
+            $table->longText('failed_job_ids');
+            $table->mediumText('options')->nullable();
+            $table->integer('cancelled_at')->nullable();
+            $table->integer('created_at');
+            $table->integer('finished_at')->nullable();
+        });
+    }
+    $stub = __DIR__ . '/../stubs/1sheet3rows1header.xlsx';
     $this->relativeTargetPath = 'testing/1sheet3rows1header.xlsx';
 
     Storage::disk('local')->put($this->relativeTargetPath, file_get_contents($stub));

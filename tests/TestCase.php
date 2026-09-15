@@ -17,8 +17,6 @@ abstract class TestCase extends Orchestra
 
         config(['queue.default' => 'sync']);
         config(['excel-importer-sheets' => require __DIR__.'/_fixtures/config/excel-importer-sheets.php']);
-
-        $this->createJobBatchesTable();
     }
 
     protected function getPackageProviders($app): array
@@ -46,27 +44,5 @@ abstract class TestCase extends Orchestra
     protected function defineDatabaseMigrations(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../src/database/migrations');
-    }
-
-    private function createJobBatchesTable(): void
-    {
-        $connection = $this->app['db']->connection();
-
-        if ($connection->getSchemaBuilder()->hasTable('job_batches')) {
-            return;
-        }
-
-        $connection->getSchemaBuilder()->create('job_batches', function (Blueprint $table) {
-            $table->string('id')->primary();
-            $table->string('name');
-            $table->integer('total_jobs');
-            $table->integer('pending_jobs');
-            $table->integer('failed_jobs');
-            $table->longText('failed_job_ids');
-            $table->mediumText('options')->nullable();
-            $table->integer('cancelled_at')->nullable();
-            $table->integer('created_at');
-            $table->integer('finished_at')->nullable();
-        });
     }
 }
