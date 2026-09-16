@@ -12,6 +12,14 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    Storage::disk('local')->put(
+        'testing/1sheet3rows1header.xlsx',
+        file_get_contents(__DIR__ . '/../../stubs/1sheet3rows1header.xlsx'),
+    );
+});
+
+
 it('does not duplicate rows when extraction runs twice on the same sheet', function () {
     $file = ExcelFile::factory()->create([
         'disk' => 'local',
