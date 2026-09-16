@@ -8,7 +8,7 @@ use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 
 it('lists every sheet in an xlsx file', function () {
-    $path = __DIR__ . '/../../../stubs/2sheets2rows.xlsx';
+    $path = __DIR__ . '/../../stubs/2sheets2rows.xlsx';
 
     expect(is_file($path))->toBeTrue("Stub missing at {$path}");
 
@@ -24,7 +24,7 @@ it('lists every sheet in an xlsx file', function () {
 });
 
 it('reads rows from a sheet and passes them to the handler', function () {
-    $path = __DIR__ . '/../../../stubs/2sheets2rows.xlsx';
+    $path = __DIR__ . '/../../stubs/2sheets2rows.xlsx';
 
     $handler = new class implements RowHandler {
         /** @var list<RowData> */
@@ -47,7 +47,7 @@ it('reads rows from a sheet and passes them to the handler', function () {
 });
 
 it('throws when the sheet index does not exist', function () {
-    $path = __DIR__ . '/../../../stubs/2sheets2rows.xlsx';
+    $path = __DIR__ . '/../../stubs/2sheets2rows.xlsx';
 
     $handler = new class implements RowHandler {
         public function handle(RowData $row): void
