@@ -67,7 +67,7 @@ jobs:
 
       - name: Run tests with coverage
         if: matrix.php == '8.2' && matrix.testbench == '8'
-        run: vendor/bin/pest --coverage --ci
+        run: vendor/bin/pest --coverage --min=80 --ci
 
       - name: Run tests
         if: matrix.php != '8.2' || matrix.testbench != '8'
