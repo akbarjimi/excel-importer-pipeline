@@ -61,7 +61,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require --no-interaction --no-update \
+          composer require --dev --no-interaction --no-update \
             "orchestra/testbench:^${{ matrix.testbench }}"
           composer install --prefer-dist --no-interaction --no-progress
 
