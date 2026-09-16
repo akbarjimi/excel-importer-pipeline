@@ -7,8 +7,19 @@ use Akbarjimi\ExcelImporter\Drivers\OpenSpoutDriver;
 use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
 
+beforeEach(function () {
+    if (!class_exists(\OpenSpout\Reader\XLSX\Reader::class)) {
+        $this->markTestSkipped('openspout/openspout not installed');
+    }
+});
+
+function stubPath(string $name): string
+{
+    return dirname(__DIR__, 2) . '/stubs/' . $name;
+}
+
 it('lists every sheet in an xlsx file', function () {
-    $path = __DIR__ . '/../../stubs/2sheets2rows.xlsx';
+    $path = stubPath('2sheets2rows.xlsx');
 
     expect(is_file($path))->toBeTrue("Stub missing at {$path}");
 
@@ -24,7 +35,7 @@ it('lists every sheet in an xlsx file', function () {
 });
 
 it('reads rows from a sheet and passes them to the handler', function () {
-    $path = __DIR__ . '/../../stubs/2sheets2rows.xlsx';
+    $path = stubPath('2sheets2rows.xlsx');
 
     $handler = new class implements RowHandler {
         /** @var list<RowData> */
@@ -47,7 +58,7 @@ it('reads rows from a sheet and passes them to the handler', function () {
 });
 
 it('throws when the sheet index does not exist', function () {
-    $path = __DIR__ . '/../../stubs/2sheets2rows.xlsx';
+    $path = stubPath('2sheets2rows.xlsx');
 
     $handler = new class implements RowHandler {
         public function handle(RowData $row): void
