@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Akbarjimi\ExcelImporter;
 
+use Akbarjimi\ExcelImporter\Console\Commands\BenchmarkCommand;
 use Akbarjimi\ExcelImporter\Console\Commands\RetryCommand;
 use Akbarjimi\ExcelImporter\Console\Commands\StatusCommand;
 use Akbarjimi\ExcelImporter\Contracts\ExcelReaderDriver;
@@ -46,6 +47,7 @@ class ExcelImporterServiceProvider extends ServiceProvider
             $this->commands([
                 StatusCommand::class,
                 RetryCommand::class,
+                BenchmarkCommand::class,
             ]);
         }
     }
