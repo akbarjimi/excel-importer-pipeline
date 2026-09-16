@@ -6,9 +6,10 @@ use Akbarjimi\ExcelImporter\Contracts\RowHandler;
 use Akbarjimi\ExcelImporter\Drivers\OpenSpoutDriver;
 use Akbarjimi\ExcelImporter\DTOs\RowData;
 use Akbarjimi\ExcelImporter\DTOs\SheetInfo;
+use OpenSpout\Reader\XLSX\Reader;
 
 beforeEach(function () {
-    if (!class_exists(\OpenSpout\Reader\XLSX\Reader::class)) {
+    if (!class_exists(Reader::class)) {
         $this->markTestSkipped('openspout/openspout not installed');
     }
 });
@@ -30,8 +31,8 @@ it('lists every sheet in an xlsx file', function () {
         ->and($sheets[1])->toBeInstanceOf(SheetInfo::class)
         ->and($sheets[0]->name)->toBe('Sheet2')
         ->and($sheets[1]->name)->toBe('Sheet3')
-        ->and($sheets[0]->raw['name'])->toBe('Sheet2')
-        ->and($sheets[1]->raw['name'])->toBe('Sheet3');
+        ->and($sheets[0]->index)->toBe(0)
+        ->and($sheets[1]->index)->toBe(1);
 });
 
 it('reads rows from a sheet and passes them to the handler', function () {
@@ -47,7 +48,7 @@ it('reads rows from a sheet and passes them to the handler', function () {
         }
     };
 
-    (new OpenSpoutDriver)->readRows($path, 1, $handler);
+    (new OpenSpoutDriver)->readRows($path, 0, $handler);
 
     expect($handler->rows)->toHaveCount(2)
         ->and($handler->rows[0])->toBeInstanceOf(RowData::class)

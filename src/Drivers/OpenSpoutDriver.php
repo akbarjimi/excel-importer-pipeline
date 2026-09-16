@@ -54,11 +54,11 @@ final class OpenSpoutDriver implements ExcelReaderDriver
 
         try {
             $sheets = [];
-            foreach ($reader->getSheetIterator() as $index => $sheet) {
+            foreach ($reader->getSheetIterator() as $sheet) {
                 $sheets[] = new SheetInfo(
                     name: $sheet->getName(),
-                    index: $index,
-                    totalRows: $sheet->getRowCount(),
+                    index: $sheet->getIndex(),
+                    totalRows: 0,
                     totalColumns: 0,
                     raw: ['name' => $sheet->getName()],
                 );
