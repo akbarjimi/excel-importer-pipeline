@@ -44,7 +44,7 @@ jobs:
     name: PHP ${{ matrix.php }} / Laravel ${{ matrix.laravel }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -54,8 +54,10 @@ jobs:
           coverage: ${{ matrix.php == '8.2' && matrix.testbench == '8' && 'pcov' || 'none' }}
           ini-values: memory_limit=512M
 
-      - name: Disable advisory block
-        run: composer config --no-plugins policy.advisories.block false
+      - name: Configure Composer
+        run: |
+          composer config platform.php ${{ matrix.php }}
+          composer config --no-plugins policy.advisories.block false
 
       - name: Install dependencies
         run: |
